@@ -41,13 +41,47 @@ function safeJsonParse(str) {
 }
 
 function normalizeUid(input) {
-  // ✅ 统一使用“不带 game_ 前缀”的纯 UID
+  // 统一转为“不带 game_ 前缀”的纯 UID
   // - 输入 game_30033 => 30033
   // - 输入 30033      => 30033
   if (!input) return null;
   const s = String(input).trim();
   if (!s) return null;
   return s.startsWith('game_') ? s.slice(5) : s;
+}
+
+function toGameUid(input) {
+  const uid = normalizeUid(input);
+  return uid ? `game_${uid}` : null;
+}
+
+function parseUidToken(uidInput, tokenInput) {
+  const rawUid = String(uidInput ?? '').trim();
+  const rawToken = String(tokenInput ?? '').trim();
+
+  // 兼容用户直接粘贴 connect_code（格式："uid token"）
+  const splitBySpace = (s) => s.split(/\s+/).map(v => v.trim()).filter(Boolean);
+
+  let uid = rawUid;
+  let token = rawToken;
+
+  const tokenParts = splitBySpace(rawToken);
+  if (tokenParts.length >= 2) {
+    uid = tokenParts[0];
+    token = tokenParts.slice(1).join(' ');
+  }
+
+  const uidParts = splitBySpace(rawUid);
+  if (uidParts.length >= 2) {
+    uid = uidParts[0];
+    token = uidParts.slice(1).join(' ');
+  }
+
+  return {
+    uid: normalizeUid(uid),
+    token: String(token || '').trim(),
+    usedConnectCode: tokenParts.length >= 2 || uidParts.length >= 2,
+  };
 }
 
 function stripGamePrefix(id) {
@@ -142,17 +176,18 @@ class ChatClient {
   }
 
   async _initIM(timeout = 15000) {
-    const uid = this.state.uid;
+    const uid = normalizeUid(this.state.uid);
+    const gameUid = toGameUid(uid);
     const token = this.state.token;
 
-    this._emit('log', { level: 'info', msg: `正在获取 IM 签名: uid=${uid}` });
-    const { appId, userSig, userId } = await requestGameSign(uid, token);
+    this._emit('log', { level: 'info', msg: `正在获取 IM 签名: uid=${gameUid}` });
+    const { appId, userSig } = await requestGameSign(gameUid, token);
 
     this.state.appId = appId;
     this.state.userSig = userSig;
-    // ✅ IM 登录 userID 强制使用纯 UID（不带 game_）
-    // game_sign 返回的 userId 可能带 game_ 前缀，但你已验证带 game_ 时 App 不响应
-    this.state.userId = normalizeUid(uid);
+    // 官方 IM 规范：登录 userID 必须使用 game_ 前缀账号
+    // 发送目标 to 仍然使用纯 UID（不带 game_）
+    this.state.userId = gameUid;
 
     // provide WebSocket implementation for Node
     // TencentCloudChat on Node expects global WebSocket
@@ -350,13 +385,13 @@ app.post('/api/reinit', async (_req, res) => {
 
 app.post('/api/login', async (req, res) => {
   const { uid, token } = req.body || {};
-  if (!uid || !token) return res.status(400).json({ success: false, message: '缺少 uid/token' });
+  const parsed = parseUidToken(uid, token);
+  if (!parsed.uid || !parsed.token) return res.status(400).json({ success: false, message: '缺少 uid/token（或 connect_code 解析失败）' });
 
   try {
-    const nuid = normalizeUid(uid);
-    await adminClient.loginWith(nuid, token);
-    adminConfig = { ...adminConfig, uid: nuid, token, appId: adminClient.state.appId, userId: adminClient.state.userId, isReady: true };
-    res.json({ success: true, message: 'IM 登录成功', data: { uid: nuid, userId: adminConfig.userId, appId: adminConfig.appId } });
+    await adminClient.loginWith(parsed.uid, parsed.token);
+    adminConfig = { ...adminConfig, uid: parsed.uid, token: parsed.token, appId: adminClient.state.appId, userId: adminClient.state.userId, isReady: true };
+    res.json({ success: true, message: 'IM 登录成功', data: { uid: parsed.uid, userId: adminConfig.userId, appId: adminConfig.appId, usedConnectCode: parsed.usedConnectCode } });
   } catch (e) {
     adminConfig.isReady = false;
     res.status(500).json({ success: false, message: e?.message || String(e) });
@@ -429,11 +464,12 @@ async function handleWsMessage(ws, session, msg) {
       break;
 
     case 'login': {
-      const uid = normalizeUid(msg.uid);
-      const token = msg.token;
+      const parsed = parseUidToken(msg.uid, msg.token);
+      const uid = parsed.uid;
+      const token = parsed.token;
       if (!uid || !token) {
-        wsLog(ws, '缺少 uid/token', 'error');
-        wsSend(ws, { type: 'loginResult', success: false, message: '缺少 uid/token' });
+        wsLog(ws, '缺少 uid/token（或 connect_code 解析失败）', 'error');
+        wsSend(ws, { type: 'loginResult', success: false, message: '缺少 uid/token（或 connect_code 解析失败）' });
         return;
       }
 
@@ -445,7 +481,7 @@ async function handleWsMessage(ws, session, msg) {
         await session.im.loginWith(uid, token);
         session.isReady = true;
         wsLog(ws, 'IM 登录成功', 'success', { uid, appId: session.im.state.appId, userId: session.im.state.userId });
-        wsSend(ws, { type: 'loginResult', success: true, data: { uid, userId: session.im.state.userId, appId: session.im.state.appId } });
+        wsSend(ws, { type: 'loginResult', success: true, data: { uid, userId: session.im.state.userId, appId: session.im.state.appId, usedConnectCode: parsed.usedConnectCode } });
         wsStatus(ws, session);
       } catch (e) {
         session.isReady = false;
@@ -561,6 +597,57 @@ async function handleWsMessage(ws, session, msg) {
         wsSend(ws, { type: 'sendResult', success: false, traceId, message: e?.message || String(e) });
         wsStatus(ws, session);
       }
+      break;
+    }
+
+    case 'diagnose': {
+      const connect = parseUidToken(msg.uid ?? session.uid, msg.token ?? session.token);
+      const candidateTargets = [
+        msg.targetId,
+        process.env.GAME_CMD_TO,
+        session.im?.state?.userId,
+        connect.uid,
+      ];
+      const targets = Array.from(new Set(candidateTargets.filter(Boolean).map(v => normalizeUid(v)).filter(Boolean)));
+      const commandId = String(msg.commandId || msg.id || '').trim();
+
+      const checks = {
+        wsConnected: true,
+        imReady: !!session.isReady,
+        uid: connect.uid,
+        gameUid: toGameUid(connect.uid),
+        tokenLength: connect.token ? connect.token.length : 0,
+        tokenHasWhitespace: /\s/.test(connect.token || ''),
+        commandId,
+        commandIdLooksValid: /^[A-Za-z0-9_.-]+$/.test(commandId),
+        targets,
+      };
+
+      try {
+        if (connect.uid && connect.token) {
+          const sign = await requestGameSign(toGameUid(connect.uid), connect.token);
+          checks.gameSign = { ok: true, appId: sign.appId, userSigLength: (sign.userSig || '').length };
+        } else {
+          checks.gameSign = { ok: false, message: 'uid/token 缺失，无法验证签名接口' };
+        }
+      } catch (e) {
+        checks.gameSign = { ok: false, message: e?.message || String(e) };
+      }
+
+      const hints = [];
+      if (!checks.imReady) hints.push('IM 未就绪：先解决 KICKED_OUT/SDK_NOT_READY，再发指令');
+      if (!checks.gameSign?.ok) hints.push('签名验证失败：connect_code 可能过期，需在 App 内重新启动游戏获取新的连接码');
+      if (!checks.commandId) hints.push('commandId 为空：必须发送你在“开发游戏”里配置的指令 ID');
+      if (checks.commandId && !checks.commandIdLooksValid) hints.push('commandId 含特殊空白/字符，建议与 App 配置的 ID 完全一致（大小写敏感）');
+      if (targets.length === 0) hints.push('没有可用收件人 target，无法路由到 App');
+
+      wsSend(ws, {
+        type: 'diagnoseResult',
+        success: true,
+        time: nowIso(),
+        checks,
+        hints,
+      });
       break;
     }
 
