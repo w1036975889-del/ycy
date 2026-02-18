@@ -1,0 +1,59 @@
+<!-- ===== index.html (Full Production Version) ===== -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>YiDimension 控制台</title>
+  <script src="yidimension-sdk.js?v=20260216a"></script>
+</head>
+<body>
+  <h2>YiDimension 调试台</h2>
+
+  <div>
+    UID: <input id="uid" />
+    Token: <input id="token" />
+    <button onclick="login()">登录</button>
+  </div>
+
+  <div>
+    指令ID: <input id="val" type="text" placeholder="可输入字母/数字/符号，如 player_hurt 或 1" />
+    <button onclick="send()">发送信号</button>
+  </div>
+
+  <div>
+    连接状态: <span id="wsStatus">-</span>
+    IM状态: <span id="imStatus">-</span>
+  </div>
+
+  <div>
+    <h4>日志:</h4>
+    <pre id="logBox"></pre>
+  </div>
+
+  <script>
+    YiDimension.onLog = (level, msg) => {
+      const box = document.getElementById('logBox');
+      box.textContent += `[${level}] ${msg}
+`;
+    };
+
+    YiDimension.onStatusChange = (ws, im) => {
+      document.getElementById('wsStatus').textContent = ws ? '已连接' : '未连接';
+      document.getElementById('imStatus').textContent = im ? '已登录' : '未登录';
+    };
+
+    function login() {
+      const uid = document.getElementById('uid').value;
+      const token = document.getElementById('token').value;
+      YiDimension.login(uid, token);
+    }
+
+    function send() {
+      const val = document.getElementById('val').value;
+      YiDimension.send(val);
+    }
+
+    YiDimension.connect();
+  </script>
+</body>
+</html>

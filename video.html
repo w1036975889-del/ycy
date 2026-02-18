@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>异次元剧场 - V4.3 终极版</title>
+    <style>
+        :root { --primary: #7c3aed; --bg: #0f172a; --panel: #1e293b; --text: #e2e8f0; --border: #334155; }
+        body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', monospace; display: flex; height: 100vh; overflow: hidden; }
+        
+        .video-section { flex: 1; display: flex; flex-direction: column; padding: 10px; border-right: 1px solid var(--border); min-width: 0; }
+        .ctrl-section { width: 380px; display: flex; flex-direction: column; padding: 10px; background: var(--panel); border-left: 1px solid #000; overflow-y: auto; flex-shrink: 0; gap: 10px; }
+
+        video { width: 100%; height: 100%; object-fit: contain; background: #000; border-radius: 4px; }
+
+        .card { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); }
+        .card-title { font-size: 13px; color: #a78bfa; font-weight: bold; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+
+        input[type="text"] {
+            background: #0f172a; border: 1px solid #475569; color: #fff; padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box; margin-bottom: 5px; font-family: monospace; font-size: 12px;
+        }
+        input:focus { border-color: var(--primary); outline: none; }
+        
+        .main-btn { width: 100%; padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
+        .btn-connect { background: #2563eb; }
+        .btn-disconnect { background: #ef4444; }
+        .btn-disabled { background: #475569; cursor: not-allowed; }
+
+        .status-row { display: flex; gap: 15px; font-size: 12px; color: #94a3b8; margin-bottom: 5px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #475569; display: inline-block; margin-right: 4px; }
+        .dot.on { background: #22c55e; box-shadow: 0 0 5px #22c55e; }
+
+        .table-wrap { height: 200px; overflow-y: auto; background: #0f172a; border: 1px solid var(--border); border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { position: sticky; top: 0; background: #334155; padding: 5px; text-align: left; color: #94a3b8; }
+        td { padding: 4px; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+        tr.active { background: #3730a3; color: white; font-weight: bold; }
+
+        .log-container { flex: 1; min-height: 150px; background: #000; border: 1px solid #475569; border-radius: 4px; padding: 5px; overflow-y: auto; font-family: monospace; font-size: 11px; color: #64748b; }
+        .log-item { border-bottom: 1px solid #111; padding: 1px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="video-section">
+        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+            <span style="font-weight:bold; color:#fff;">🎬 剧场模式 V4.3</span>
+            <span id="timeDisplay" style="color:var(--primary); font-family:monospace; font-weight:bold;">00:00.00</span>
+        </div>
+        <div style="flex:1; background:#000; display:flex; align-items:center; justify-content:center; border-radius:6px; overflow:hidden;">
+            <video id="mainVideo" controls crossorigin="anonymous"></video>
+        </div>
+    </div>
+
+    <div class="ctrl-section">
+        <div class="card">
+            <div class="card-title">
+                📡 设备连接
+                <div class="status-row">
+                    <span><i id="wsDot" class="dot"></i>服务</span>
+                    <span><i id="imDot" class="dot"></i>IM</span>
+                </div>
+            </div>
+            
+            <input type="text" id="pasteInput" placeholder="📋 粘贴 App 账号数据 (自动识别)" oninput="handlePaste(this)" style="border-style:dashed; border-color:#64748b;">
+            
+            <div style="display:flex; gap:5px;">
+                <input type="text" id="uid" placeholder="UID (game_...)" style="flex:1;">
+                <input type="text" id="token" placeholder="Token" style="flex:1;">
+            </div>
+
+            <button id="mainBtn" onclick="toggleConnect()" class="main-btn btn-disabled" disabled>正在初始化...</button>
+        </div>
+
+        <div class="card">
+            <div class="card-title">💿 资源加载</div>
+            <select id="gameSelect" onchange="loadPreset()" style="width:100%; padding:5px; background:#0f172a; color:white; border:1px solid #475569; margin-bottom:5px;">
+                <option value="">-- 选择示例 --</option>
+                <option value="demo">示例：海洋世界</option>
+            </select>
+            <div style="display:flex; gap:5px;">
+                <button onclick="document.getElementById('fileVideo').click()" class="main-btn" style="background:#475569; padding:5px;">📂 视频</button>
+                <button onclick="document.getElementById('fileScript').click()" class="main-btn" style="background:#475569; padding:5px;">📄 脚本</button>
+            </div>
+            <input type="file" id="fileVideo" accept="video/*" style="display:none" onchange="loadLocalVideo(this)">
+            <input type="file" id="fileScript" accept=".csv" style="display:none" onchange="loadLocalScript(this)">
+        </div>
+
+        <div class="table-wrap">
+            <table id="scriptTable">
+                <thead><tr><th>A时间</th><th>指令</th><th>B时间</th><th>指令</th></tr></thead>
+                <tbody id="scriptBody"></tbody>
+            </table>
+        </div>
+
+        <div style="display:flex; gap:5px;">
+            <input type="text" id="testVal" placeholder="指令(1,50...)" style="margin:0;">
+            <button onclick="sendTest()" class="main-btn" style="background:#059669; width:80px; padding:5px;">发送</button>
+            <button onclick="YiDimension.send(0)" class="main-btn" style="background:#ef4444; width:80px; padding:5px;">停止</button>
+        </div>
+
+        <div class="log-container" id="logBox">
+            <div class="log-item">页面加载完成...</div>
+        </div>
+    </div>
+
+    <!-- 确保这个文件在同一目录下 -->
+    <script src="yidimension-sdk.js"></script>
+
+    <script>
+        const GAMES = { "demo": { video: "https://vjs.zencdn.net/v/oceans.mp4", script: "demo.csv" } };
+        let scriptData = [];
+        let isConnected = false;
+        let isServerConnected = false;
+        const video = document.getElementById('mainVideo');
+        const btn = document.getElementById('mainBtn');
+
+        // --- 核心修复：暴力查岗机制 ---
+        window.onload = function() {
+            log('正在等待 SDK...');
+
+            if(typeof YiDimension !== 'undefined') {
+                YiDimension.onLog = (msg, level) => log(msg, level);
+                YiDimension.onStatusChange = updateStatusUI;
+            } else {
+                log('❌ 致命错误：找不到 yidimension-sdk.js 文件！', 'error');
+            }
+
+            // 暴力查岗机制：每1秒检查一次连接状态
+            setInterval(() => {
+                if (typeof YiDimension !== 'undefined' && YiDimension.ws) {
+                    if (YiDimension.ws.readyState === 1 && !isServerConnected) {
+                        log('🔄 自动检测：服务器已连接');
+                        updateStatusUI(true, YiDimension.isReady);
+                    }
+                    if (YiDimension.ws.readyState === 3 && isServerConnected) {
+                         updateStatusUI(false, false);
+                    }
+                }
+            }, 1000);
+
+            if(localStorage.uid) document.getElementById('uid').value = localStorage.uid;
+            if(localStorage.token) document.getElementById('token').value = localStorage.token;
+        };
+
+        function updateStatusUI(isServerOnline, isImLoggedIn) {
+            isServerConnected = isServerOnline;
+            isConnected = isImLoggedIn;
+
+            document.getElementById('wsDot').className = isServerOnline ? 'dot on' : 'dot';
+            document.getElementById('imDot').className = isImLoggedIn ? 'dot on' : 'dot';
+
+            if (!isServerOnline) {
+                btn.innerText = '🔴 服务器未连接';
+                btn.className = 'main-btn btn-disabled';
+                btn.disabled = true;
+            } else if (isImLoggedIn) {
+                btn.innerText = '🔌 断开连接 (已登录)';
+                btn.className = 'main-btn btn-disconnect';
+                btn.disabled = false;
+            } else {
+                btn.innerText = '🚀 连接设备';
+                btn.className = 'main-btn btn-connect';
+                btn.disabled = false;
+            }
+        }
+
+        function toggleConnect() {
+            if (isConnected) {
+                YiDimension.logout();
+                log('已断开 IM');
+            } else {
+                const uid = document.getElementById('uid').value.trim();
+                const token = document.getElementById('token').value.trim();
+                if (!uid || !token) return alert('请先填写 UID/Token');
+                
+                log('正在登录...');
+                btn.innerText = '连接中...';
+                btn.disabled = true;
+                YiDimension.login(uid, token);
+            }
+        }
+
+        function handlePaste(el) {
+            const val = el.value.trim();
+            if(!val) return;
+            const parts = val.split(/\s+/);
+            parts.forEach(p => {
+                if(/^\d+$/.test(p)) document.getElementById('uid').value = 'game_' + p;
+                else if(p.startsWith('game_')) document.getElementById('uid').value = p;
+                else if(p.length > 20) document.getElementById('token').value = p;
+            });
+            setTimeout(() => el.value = '', 500);
+            log('粘贴识别完成');
+        }
+
+        function loadPreset() {
+            const key = document.getElementById('gameSelect').value;
+            if(!key) return;
+            video.src = GAMES[key].video;
+            fetch(GAMES[key].script + '?t=' + Date.now()).then(r=>r.text()).then(t=>parseCSV(t));
+        }
+
+        function loadLocalVideo(input) { if(input.files[0]) video.src = URL.createObjectURL(input.files[0]); }
+        function loadLocalScript(input) { if(input.files[0]) { const r = new FileReader(); r.onload = e => parseCSV(e.target.result); r.readAsText(input.files[0]); } }
+
+        function parseCSV(text) {
+            scriptData = [];
+            const rows = text.split('\n');
+            for(let i=1; i<rows.length; i++) {
+                const row = rows[i].trim();
+                if(!row) continue;
+                const cols = row.split(',');
+                if(cols[0] && cols[1]) scriptData.push({ t: parseFloat(cols[0]), v: parseInt(cols[1]), c: 'A', ok: false });
+                if(cols[2] && cols[3]) scriptData.push({ t: parseFloat(cols[2]), v: parseInt(cols[3]), c: 'B', ok: false });
+            }
+            scriptData.sort((a,b) => a.t - b.t);
+            renderTable();
+            log(`脚本加载: ${scriptData.length} 条指令`);
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('scriptTable').querySelector('tbody');
+            tbody.innerHTML = '';
+            scriptData.forEach((item, idx) => {
+                const tr = document.createElement('tr');
+                tr.id = `row-${idx}`;
+                tr.innerHTML = `<td>${item.c==='A'?item.t.toFixed(1):''}</td><td>${item.c==='A'?item.v:''}</td><td>${item.c==='B'?item.t.toFixed(1):''}</td><td>${item.c==='B'?item.v:''}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        video.ontimeupdate = () => {
+            const now = video.currentTime;
+            document.getElementById('timeDisplay').innerText = formatTime(now);
+            scriptData.forEach((item, idx) => {
+                if(!item.ok && item.t <= now && (now - item.t) < 0.5) {
+                    item.ok = true;
+                    highlightRow(idx);
+                    sendCmd(item.v, item.c);
+                }
+            });
+        };
+
+        video.onseeking = () => {
+            YiDimension.send(0);
+            const now = video.currentTime;
+            scriptData.forEach(item => { item.ok = (item.t < now); });
+            renderTable();
+        };
+
+        function highlightRow(idx) {
+            const old = document.querySelector('tr.active');
+            if(old) old.classList.remove('active');
+            const row = document.getElementById(`row-${idx}`);
+            if(row) { row.classList.add('active'); row.scrollIntoView({block:"center"}); }
+        }
+
+        function sendCmd(val, channel='A') {
+            const payload = { "cmd": "game_cmd", "data": { "type": "control", "action": "game_signal", "value": parseInt(val), "strength": parseInt(val), "channel": channel, "duration_ms": 1000 } };
+            YiDimension.sendRaw(payload);
+            log(`[${channel}] 发送: ${val}`);
+        }
+
+        function sendTest() { const val = document.getElementById('testVal').value; if(val) sendCmd(val, 'A'); }
+
+        function log(msg, level) {
+            const box = document.getElementById('logBox');
+            const color = level === 'error' ? '#f87171' : (level === 'success' ? '#4ade80' : '#888');
+            const time = new Date().toLocaleTimeString();
+            box.innerHTML += `<div class="log-item" style="color:${color}"><span class="log-time">[${time}]</span>${msg}</div>`;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function formatTime(s) { return new Date(s*1000).toISOString().substr(14, 8); }
+    </script>
+</body>
+</html>
