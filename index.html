@@ -2,126 +2,292 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <title>YiDimension 视频脚本联动控制台</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>YiDimension 移动版视频联动控制台</title>
   <script src="yidimension-sdk.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>window.YIDIMENSION_ASSET_BASE = window.YIDIMENSION_ASSET_BASE || '';</script>
-
   <style>
-    :root { color-scheme: dark; --bg:#0f1220; --panel:#171b2f; --line:#2a3155; --text:#e8ecff; --muted:#9fa9d8; --accent:#5b7cff; --chip:#2b356f; }
-    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"PingFang SC",sans-serif;background:radial-gradient(circle at top,#1a2040 0%,var(--bg) 50%);color:var(--text);min-height:100vh;padding:18px}
-    .wrap{max-width:1180px;margin:0 auto;display:grid;gap:14px}.card{background:linear-gradient(180deg,#1b2140,var(--panel));border:1px solid var(--line);border-radius:14px;padding:14px}
-    h1,h2,h3{margin:0 0 10px}.small{color:var(--muted);font-size:12px}.row{display:grid;gap:10px}.grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-    .status-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}.status-pill{border:1px solid var(--line);border-radius:999px;padding:8px 10px;display:flex;justify-content:space-between;background:rgba(255,255,255,.03);font-size:12px;gap:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    input,select{width:100%;padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:#0f1430;color:var(--text)} label span{display:block;margin-bottom:4px}
-    .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px} button{border:1px solid #33408a;background:#243069;color:#f0f4ff;border-radius:10px;padding:8px 12px;cursor:pointer} button.primary{background:var(--accent);border-color:#6f8dff} button.warn{background:#7a5d1c;border-color:#c8a03c} button:disabled{opacity:.5;cursor:not-allowed}
-    .video-layout{display:grid;grid-template-columns:1.3fr .9fr;gap:12px} video{width:100%;max-height:460px;border-radius:12px;border:1px solid var(--line);background:#02030a}
-    .chips{display:flex;flex-wrap:wrap;gap:6px}.chip{border:1px solid #3f4d9e;border-radius:999px;padding:4px 10px;font-size:12px;background:var(--chip);color:#e9eeff}
-    table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #34407e;padding:6px}th{background:#1d2552;position:sticky;top:0;z-index:1}.script-wrap{max-height:330px;overflow:auto;border:1px solid var(--line);border-radius:10px}
-    .preview,#logBox{background:#0b0f22;border:1px solid var(--line);border-radius:10px;padding:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.45;white-space:pre-wrap;margin:0}#logBox{max-height:260px;overflow:auto}
-    .danger{color:#ff9e9e}
-    @media (max-width:980px){.video-layout,.grid-4,.grid-3,.status-row{grid-template-columns:1fr}}
+    :root {
+      color-scheme: dark;
+      --bg: #0d1020;
+      --panel: #161c35;
+      --line: #2b366e;
+      --text: #eef2ff;
+      --muted: #9aa6d4;
+      --accent: #6a8bff;
+      --accent-2: #4f71ef;
+      --ok: #29cb73;
+      --warn: #f5be34;
+      --danger: #ff6b7a;
+      --radius: 14px;
+    }
 
+    * { box-sizing: border-box; }
 
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 10% 0%, #1a2455 0%, var(--bg) 42%);
+      color: var(--text);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      padding: 14px 12px calc(20px + env(safe-area-inset-bottom));
+    }
+
+    .app {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      gap: 12px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(28, 36, 73, 0.96), var(--panel));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      box-shadow: 0 8px 22px rgba(4, 8, 20, 0.25);
+    }
+
+    h1, h2, h3 { margin: 0; }
+
+    .title { font-size: 20px; font-weight: 800; }
+    .sub { color: var(--muted); font-size: 12px; margin-top: 4px; line-height: 1.45; }
+
+    .status-grid {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 12px;
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .layout {
+      display: grid;
+      gap: 12px;
+    }
+
+    .fields {
+      display: grid;
+      gap: 8px;
+    }
+
+    .label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #0d1430;
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+
+    textarea { min-height: 74px; resize: vertical; }
+
+    .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    button {
+      border: 1px solid #3953bf;
+      border-radius: 11px;
+      background: #23358f;
+      color: #f6f8ff;
+      font-size: 14px;
+      padding: 9px 12px;
+      cursor: pointer;
+    }
+
+    button.primary {
+      background: linear-gradient(180deg, var(--accent), var(--accent-2));
+      border-color: #7d9aff;
+      font-weight: 700;
+    }
+
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .video-wrap {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #050711;
+    }
+
+    video { width: 100%; display: block; max-height: 56vh; }
+
+    .hint { color: var(--muted); font-size: 12px; line-height: 1.45; margin-top: 6px; }
+
+    details.dev {
+      border-top: 1px dashed #3a4a93;
+      margin-top: 6px;
+      padding-top: 6px;
+    }
+
+    details.dev > summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #c8d4ff;
+      font-weight: 700;
+      font-size: 14px;
+      user-select: none;
+    }
+
+    details.dev > summary::-webkit-details-marker { display: none; }
+
+    .arrow { transition: transform .2s ease; display: inline-block; }
+    details[open] .arrow { transform: rotate(90deg); }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { border: 1px solid #334083; padding: 6px; }
+    th { background: #202a5a; }
+    .table-wrap { overflow: auto; max-height: 320px; border-radius: 10px; margin-top: 8px; }
+
+    #logBox {
+      margin-top: 8px;
+      background: #0a0f22;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      max-height: 240px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    @media (min-width: 760px) {
+      .layout-2 { grid-template-columns: 1fr 1fr; }
+      .status-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .fields-2 { grid-template-columns: 1fr 1fr; }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <main class="app">
     <section class="card">
-
-      <h1>YiDimension 视频脚本联动控制台</h1>
-      <p class="small">游戏数据由 <code>/assets/games.json</code> 驱动（服务器目录 <code>/www/wwwroot/yidimension/assets</code>）；脚本默认来自 <code>/assets/plans</code>；视频默认来自 <code>/assets/videos</code>（也支持外链）。</p>
-
-      <div class="status-row">
-        <div class="status-pill"><span>WebSocket</span><span id="wsState">未连接</span></div>
-        <div class="status-pill"><span>IM 状态</span><span id="imState">未就绪</span></div>
-        <div class="status-pill"><span>视频时间</span><span id="videoTime">0.00s</span></div>
-        <div class="status-pill"><span>脚本事件</span><span id="eventCount">0</span></div>
-        <div class="status-pill"><span>已触发</span><span id="firedCount">0</span></div>
-        <div class="status-pill"><span>游戏列表</span><span id="gameSource">加载中</span></div>
+      <h1 class="title">YiDimension 移动版控制台</h1>
+      <p class="sub">先连 IM、选游戏、播视频。开发者高级功能（脚本编辑/日志）放在页面底部折叠区域。</p>
+      <div class="status-grid">
+        <div class="pill"><span>WS</span><span id="wsState">未连接</span></div>
+        <div class="pill"><span>IM</span><span id="imState">未就绪</span></div>
+        <div class="pill"><span>视频时间</span><span id="videoTime">0.00s</span></div>
+        <div class="pill"><span>游戏列表</span><span id="gameSource">加载中</span></div>
 
       </div>
     </section>
 
     <section class="card">
 
-      <h2>1) IM 连接与登录</h2>
-      <div class="row grid-3">
-        <label><span class="small">UID</span><input id="uid" placeholder="例如 30033" autocomplete="off" /></label>
-        <label><span class="small">Token</span><input id="token" placeholder="请输入 token" autocomplete="off" /></label>
-        <label><span class="small">默认指令（手动按钮）</span><input id="manualCommand" placeholder="例如 hurt / _stop_all" autocomplete="off" /></label>
+      <h2>1) IM 连接</h2>
+      <div class="fields">
+        <label>
+          <span class="label">一键粘贴 UID Token（格式：<code>uid token</code>）</span>
+          <textarea id="connectCode" placeholder="例如：30033 xxxxx_token"></textarea>
+        </label>
 
+        <div class="layout layout-2 fields-2">
+          <label><span class="label">UID</span><input id="uid" placeholder="自动带入或手动填写" /></label>
+          <label><span class="label">Token</span><input id="token" placeholder="自动带入或手动填写" /></label>
+        </div>
       </div>
-      <div class="btns">
+
+      <div class="btns" style="margin-top:8px;">
+        <button id="parseConnectBtn" type="button">解析粘贴内容</button>
         <button id="connectBtn" class="primary" type="button">连接网关</button>
         <button id="loginBtn" type="button">登录 IM</button>
 
-        <button id="manualSendBtn" type="button">手动发送默认指令</button>
       </div>
     </section>
 
     <section class="card">
-      <h2>2) 游戏选择 + 视频来源</h2>
-      <div class="row grid-4">
-        <label><span class="small">选择游戏（来自 games.json）</span><select id="gameSelect"></select></label>
-        <label><span class="small">视频地址（可覆盖）</span><input id="customVideoUrl" placeholder="/assets/videos/xxx.mp4 或 https://..." /></label>
-        <label><span class="small">脚本地址（可覆盖）</span><input id="customPlanUrl" placeholder="/assets/plans/xxx.csv 或 .xlsx" /></label>
-        <div>
-          <span class="small">操作</span>
-          <div class="btns" style="margin-top:4px;">
-            <button id="applyGameBtn" class="primary" type="button">应用游戏配置</button>
+
+      <h2>2) 选择游戏 + 视频播放</h2>
+      <div class="fields">
+        <label><span class="label">游戏</span><select id="gameSelect"></select></label>
+        <label><span class="label">视频地址（可覆盖）</span><input id="customVideoUrl" placeholder="/assets/videos/xxx.mp4 或 https://..." /></label>
+        <label><span class="label">脚本地址（可覆盖）</span><input id="customPlanUrl" placeholder="/assets/plans/xxx.csv 或 .xlsx" /></label>
+      </div>
+
+      <div class="btns" style="margin-top:8px;">
+        <button id="applyGameBtn" class="primary" type="button">应用游戏配置</button>
+        <button id="playScriptBtn" type="button">播放并启用脚本</button>
+        <button id="pauseScriptBtn" type="button">暂停</button>
+        <button id="cacheVideoBtn" type="button">缓存当前视频</button>
+      </div>
+
+      <div class="video-wrap" style="margin-top:10px;">
+        <video id="video" controls preload="metadata" playsinline webkit-playsinline></video>
+      </div>
+      <p class="hint">发送时间始终以视频当前秒数为准；拖动回退后会自动重同步，不会和画面错位。</p>
+    </section>
+
+    <section class="card">
+      <details class="dev">
+        <summary><span class="arrow">▶</span> 开发者/高级功能（脚本、手动发指令、日志）</summary>
+
+        <div class="fields" style="margin-top:10px;">
+          <label><span class="label">手动指令</span><input id="manualCommand" placeholder="例如 hurt / _stop_all" /></label>
+          <div class="btns">
+            <button id="manualSendBtn" type="button">手动发送指令</button>
+            <button id="resetScriptBtn" type="button">按当前时间重置触发状态</button>
             <button id="loadPlanBtn" type="button">仅加载脚本文件</button>
-            <button id="applyVideoBtn" type="button">仅应用视频地址</button>
           </div>
+
+          <div class="btns">
+            <button id="addRowBtn" type="button">+ 添加脚本行</button>
+            <button id="rebuildEventsBtn" type="button">重建事件</button>
+            <button id="downloadCsvBtn" type="button">导出 CSV</button>
+            <label style="display:inline-flex;align-items:center;gap:6px;border:1px solid #3f56bc;border-radius:10px;padding:8px 10px;cursor:pointer;">
+              导入 CSV/XLSX
+              <input id="importFile" type="file" accept=".csv,.xlsx,.xls" style="display:none;" />
+            </label>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>A 设备1时间(s)</th>
+                  <th>B 设备1指令</th>
+                  <th>C 设备2时间(s)</th>
+                  <th>D 设备2指令</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="scriptBody"></tbody>
+            </table>
+          </div>
+          <div id="scriptWarn" class="hint" style="color:var(--warn);"></div>
+
+          <div class="btns">
+            <button id="clearLogBtn" type="button">清空日志</button>
+          </div>
+          <pre id="logBox"></pre>
         </div>
-      </div>
-      <div class="chips" id="gameMeta"></div>
+      </details>
     </section>
+  </main>
 
-    <section class="card video-layout">
-      <div>
-        <h3>3) 视频播放</h3>
-        <video id="video" controls preload="metadata"></video>
-        <div class="btns">
-          <button id="playScriptBtn" class="primary" type="button">播放并启用脚本</button>
-          <button id="pauseScriptBtn" type="button">暂停</button>
-          <button id="resetScriptBtn" class="warn" type="button">重置触发状态（按当前时间重算）</button>
-        </div>
-        <p class="small">同步规则：只看 <b>video.currentTime</b>。拖动回退/快进后自动重算，脚本与视频保持一致。</p>
-      </div>
-      <div>
-        <h3>4) 当前发送预览</h3>
-        <pre class="preview" id="payloadPreview">{"code":"game_cmd","id":"","token":"(空)"}</pre>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>5) 脚本编辑（Excel A/B/C/D）</h2>
-      <p class="small">A=设备1时间(s)；B=设备1指令；C=设备2时间(s)；D=设备2指令。可手动编辑，也可导入文件。</p>
-      <div class="btns">
-        <button id="addRowBtn" type="button">+ 添加脚本行</button>
-        <button id="rebuildEventsBtn" type="button">重建事件</button>
-        <button id="downloadCsvBtn" type="button">导出 CSV</button>
-        <label class="chip" style="cursor:pointer;">导入 CSV/XLSX<input id="importFile" type="file" accept=".csv,.xlsx,.xls" style="display:none;" /></label>
-      </div>
-      <div class="script-wrap" style="margin-top:8px;">
-        <table>
-          <thead><tr><th>#</th><th>A 设备1时间(s)</th><th>B 设备1指令</th><th>C 设备2时间(s)</th><th>D 设备2指令</th><th>操作</th></tr></thead>
-          <tbody id="scriptBody"></tbody>
-        </table>
-      </div>
-      <p class="small danger" id="scriptWarn"></p>
-    </section>
-
-    <section class="card">
-      <h3>6) 联调日志</h3>
-      <div class="btns"><button id="clearLogBtn" type="button">清空日志</button></div>
-
-      <pre id="logBox"></pre>
-    </section>
-  </div>
 
   <script>
     const $ = (id) => document.getElementById(id);
@@ -142,8 +308,15 @@
       scriptRows: [],
       events: [],
       playbackEnabled: false,
-      activeGame: null
+
+      networkType: 'unknown'
     };
+
+    const EXPLICIT_ASSET_BASE = String(window.YIDIMENSION_ASSET_BASE || '').replace(/\/$/, '');
+    let ASSET_BASE = EXPLICIT_ASSET_BASE || '/assets';
+
+    const fmtSec = (n) => Number.isFinite(Number(n)) ? Number(n).toFixed(2) : '0.00';
+
 
     function appendLog(level, msg, extra) {
       const t = new Date().toLocaleTimeString();
@@ -151,13 +324,68 @@
       logBox.textContent += `[${t}] [${level}] ${msg}${tail}\n`;
       logBox.scrollTop = logBox.scrollHeight;
     }
-    const fmtSec = (s) => Number.isFinite(Number(s)) ? Number(s).toFixed(2) : '0.00';
 
-    function saveBasicInputs() {
+
+    function saveBasic() {
+
       localStorage.setItem('yid_uid', state.uid);
       localStorage.setItem('yid_token', state.token);
       localStorage.setItem('yid_manual_command', state.manualCommand);
       localStorage.setItem('yid_game_id', state.selectedGameId);
+
+    }
+
+    function getCurrentVideoUrl() {
+      const raw = $('customVideoUrl').value.trim();
+      if (!raw) return '';
+      try { return new URL(raw, location.href).toString(); } catch { return ''; }
+    }
+
+    async function cacheCurrentVideo() {
+      const videoUrl = getCurrentVideoUrl();
+      if (!videoUrl) return appendLog('warn', '没有可缓存的视频地址');
+      if (!('caches' in window)) return appendLog('warn', '当前浏览器不支持 Cache API');
+
+      $('cacheVideoBtn').disabled = true;
+      appendLog('info', '开始缓存视频（首次会较慢）', { videoUrl });
+      try {
+        const cache = await caches.open('yidimension-video-v1');
+        const req = new Request(videoUrl, { mode: 'cors' });
+        const hit = await cache.match(req, { ignoreSearch: false });
+        if (hit) {
+          appendLog('info', '视频已在缓存中，无需重复下载');
+        } else {
+          const resp = await fetch(req);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          await cache.put(req, resp.clone());
+          appendLog('success', '视频缓存完成，可减少重复观看卡顿');
+        }
+      } catch (err) {
+        appendLog('error', '视频缓存失败', { message: err?.message || String(err) });
+      } finally {
+        $('cacheVideoBtn').disabled = false;
+      }
+    }
+
+    async function registerServiceWorker() {
+      if (!('serviceWorker' in navigator)) return;
+      try {
+        const reg = await navigator.serviceWorker.register('/service-worker.js');
+        appendLog('info', '离线缓存服务已启用', { scope: reg.scope });
+      } catch (err) {
+        appendLog('warn', 'Service Worker 注册失败', { message: err?.message || String(err) });
+      }
+    }
+
+    function detectNetworkInfo() {
+      const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      if (!conn) return;
+      state.networkType = conn.effectiveType || 'unknown';
+      appendLog('info', '当前网络信息', { effectiveType: conn.effectiveType, downlink: conn.downlink, rtt: conn.rtt });
+      if (/(2g|slow-2g)/i.test(String(conn.effectiveType || ''))) {
+        videoEl.preload = 'none';
+        appendLog('warn', '检测到慢网，已降低预加载策略（preload=none）');
+      }
 
     }
 
@@ -166,128 +394,18 @@
       $('imState').textContent = state.imReady ? '已就绪' : '未就绪';
 
       $('videoTime').textContent = `${fmtSec(videoEl.currentTime)}s`;
-      $('eventCount').textContent = String(state.events.length);
-      $('firedCount').textContent = String(state.events.filter((e) => e.fired).length);
       $('manualSendBtn').disabled = !(state.wsConnected && state.imReady);
     }
 
-    function refreshPayloadPreview() {
-      const preview = { code: 'game_cmd', id: state.manualCommand || '', token: state.token ? '***' : '(空)' };
-      $('payloadPreview').textContent = JSON.stringify(preview);
+    function parseConnectCode(raw) {
+      const text = String(raw || '').trim();
+      const parts = text.split(/\s+/).filter(Boolean);
+      if (parts.length < 2) return null;
+      return { uid: parts[0], token: parts.slice(1).join(' ') };
     }
 
-
-    const EXPLICIT_ASSET_BASE = String(window.YIDIMENSION_ASSET_BASE || '').replace(/\/$/, '');
-    let ASSET_BASE = EXPLICIT_ASSET_BASE || '/assets';
-
-    async function tryLoadGamesFrom(base) {
-      const resp = await fetch(`${base}/games.json`, { cache: 'no-store' });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const arr = await resp.json();
-      if (!Array.isArray(arr)) throw new Error('games.json 必须是数组');
-      return arr;
-    }
-
-    async function loadGamesList() {
-      const candidates = EXPLICIT_ASSET_BASE
-        ? [EXPLICIT_ASSET_BASE]
-        : ['/assets', './assets', '../assets'];
-
-      for (const base of candidates) {
-        try {
-          const arr = await tryLoadGamesFrom(base);
-          ASSET_BASE = base;
-          state.games = arr.filter(Boolean);
-          $('gameSource').textContent = `已加载 ${state.games.length} 个`;
-          appendLog('info', 'games.json 加载成功', { base, count: state.games.length });
-          return;
-        } catch (err) {
-          appendLog('warn', '尝试读取 games.json 失败', { base, message: err?.message || String(err) });
-        }
-      }
-
-      $('gameSource').textContent = '加载失败';
-      appendLog('error', '所有资产路径都读取失败，请检查 Nginx 站点根目录/反向代理路径', {
-        tried: candidates,
-        tip: '若页面在 /test/index.html 且 assets 在上级目录，请设置 window.YIDIMENSION_ASSET_BASE="../assets"'
-      });
-      state.games = [];
-
-    }
-
-    function getSelectedGame() {
-      return state.games.find((g) => g.id === state.selectedGameId) || state.games[0] || null;
-    }
-
-    function renderGameSelect() {
-      const s = $('gameSelect');
-      s.innerHTML = state.games.length
-        ? state.games.map((g) => `<option value="${g.id}">${g.name || g.id}</option>`).join('')
-        : '<option value="">(无可用游戏)</option>';
-
-      const fallbackId = state.games[0]?.id || '';
-      state.selectedGameId = state.selectedGameId && state.games.some((g) => g.id === state.selectedGameId)
-        ? state.selectedGameId
-        : fallbackId;
-
-      s.value = state.selectedGameId;
-      renderGameMeta();
-      saveBasicInputs();
-    }
-
-    function renderGameMeta() {
-      const g = getSelectedGame();
-      state.activeGame = g;
-      if (!g) {
-        $('gameMeta').innerHTML = '<span class="chip">未加载游戏配置</span>';
-        return;
-      }
-      const tags = Array.isArray(g.tags) ? g.tags : [];
-      const chips = [
-        `ID: ${g.id}`,
-        `视频: ${g.videoUrl || '(空)'}`,
-        `脚本: ${g.planUrl || '(空)'}`,
-        ...tags
-      ];
-      $('gameMeta').innerHTML = chips.map((x) => `<span class="chip">${x}</span>`).join('');
-      $('customVideoUrl').value = g.videoUrl || '';
-      $('customPlanUrl').value = g.planUrl || '';
-    }
-
-    function applyVideoUrl() {
-      const raw = $('customVideoUrl').value.trim();
-      if (!raw) return appendLog('warn', '视频地址为空，已忽略');
-      videoEl.src = raw;
-      videoEl.load();
-      appendLog('info', '已应用视频地址', { url: raw });
-    }
-
-    function normalizeRow(row) { return { t1: row?.t1 ?? '', c1: row?.c1 ?? '', t2: row?.t2 ?? '', c2: row?.c2 ?? '' }; }
-
-    function renderScriptRows() {
-      const body = $('scriptBody');
-      body.innerHTML = '';
-      state.scriptRows.forEach((row, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${i + 1}</td><td><input data-row="${i}" data-key="t1" value="${row.t1}" /></td><td><input data-row="${i}" data-key="c1" value="${row.c1}" /></td><td><input data-row="${i}" data-key="t2" value="${row.t2}" /></td><td><input data-row="${i}" data-key="c2" value="${row.c2}" /></td><td><button data-remove="${i}" type="button">删除</button></td>`;
-        body.appendChild(tr);
-      });
-
-      body.querySelectorAll('input[data-row]').forEach((el) => {
-        el.addEventListener('input', () => {
-          const idx = Number(el.getAttribute('data-row'));
-          const key = el.getAttribute('data-key');
-          state.scriptRows[idx][key] = el.value.trim();
-        });
-      });
-      body.querySelectorAll('button[data-remove]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const idx = Number(btn.getAttribute('data-remove'));
-          state.scriptRows.splice(idx, 1);
-          renderScriptRows();
-          rebuildEvents();
-        });
-      });
+    function normalizeRow(row) {
+      return { t1: row?.t1 ?? '', c1: row?.c1 ?? '', t2: row?.t2 ?? '', c2: row?.c2 ?? '' };
     }
 
     function parseRowsToEvents(rows) {
@@ -298,8 +416,11 @@
           const cmd = String(cmdRaw || '').trim();
           const t = Number(String(tRaw).trim());
           if (!cmd && String(tRaw).trim() === '') return;
-          if (!cmd || !Number.isFinite(t) || t < 0) return warnings.push(`第${rn}行设备${device}格式无效`);
-          events.push({ id: `${rn}-${device}-${cmd}`, row: rn, device, time: t, command: cmd, fired: false });
+          if (!cmd || !Number.isFinite(t) || t < 0) {
+            warnings.push(`第${rn}行设备${device}格式无效`);
+            return;
+          }
+          events.push({ row: rn, device, time: t, command: cmd, fired: false });
         };
         push(1, row.t1, row.c1);
         push(2, row.t2, row.c2);
@@ -323,6 +444,40 @@
       appendLog('info', '脚本事件已重建', { count: state.events.length });
     }
 
+    function renderScriptRows() {
+      const body = $('scriptBody');
+      body.innerHTML = '';
+      state.scriptRows.forEach((row, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i + 1}</td>
+          <td><input data-row="${i}" data-key="t1" value="${row.t1}" /></td>
+          <td><input data-row="${i}" data-key="c1" value="${row.c1}" /></td>
+          <td><input data-row="${i}" data-key="t2" value="${row.t2}" /></td>
+          <td><input data-row="${i}" data-key="c2" value="${row.c2}" /></td>
+          <td><button data-remove="${i}" type="button">删除</button></td>
+        `;
+        body.appendChild(tr);
+      });
+
+      body.querySelectorAll('input[data-row]').forEach((el) => {
+        el.addEventListener('input', () => {
+          const idx = Number(el.getAttribute('data-row'));
+          const key = el.getAttribute('data-key');
+          state.scriptRows[idx][key] = el.value.trim();
+        });
+      });
+
+      body.querySelectorAll('button[data-remove]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.getAttribute('data-remove'));
+          state.scriptRows.splice(idx, 1);
+          renderScriptRows();
+          rebuildEvents();
+        });
+      });
+    }
+
     async function parseCsvText(text) {
       const lines = text.split(/\r?\n/).filter((l) => l.trim());
       return lines.map((line) => {
@@ -331,15 +486,81 @@
       });
     }
 
+
+    async function tryLoadGamesFrom(base) {
+      const resp = await fetch(`${base}/games.json`, { cache: 'no-store' });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const arr = await resp.json();
+      if (!Array.isArray(arr)) throw new Error('games.json 必须是数组');
+      return arr;
+    }
+
+    async function loadGamesList() {
+
+      const candidates = EXPLICIT_ASSET_BASE ? [EXPLICIT_ASSET_BASE] : ['/assets', './assets', '../assets'];
+
+      for (const base of candidates) {
+        try {
+          const arr = await tryLoadGamesFrom(base);
+          ASSET_BASE = base;
+          state.games = arr.filter(Boolean);
+
+          $('gameSource').textContent = `已加载${state.games.length}`;
+
+          appendLog('info', 'games.json 加载成功', { base, count: state.games.length });
+          return;
+        } catch (err) {
+          appendLog('warn', '尝试读取 games.json 失败', { base, message: err?.message || String(err) });
+        }
+      }
+
+      state.games = [];
+      $('gameSource').textContent = '加载失败';
+      appendLog('error', '所有资产路径都失败', { tried: candidates, tip: '可设置 window.YIDIMENSION_ASSET_BASE="../assets"' });
+
+    }
+
+    function getSelectedGame() {
+      return state.games.find((g) => g.id === state.selectedGameId) || state.games[0] || null;
+    }
+
+    function renderGameSelect() {
+      const s = $('gameSelect');
+      s.innerHTML = state.games.length
+        ? state.games.map((g) => `<option value="${g.id}">${g.name || g.id}</option>`).join('')
+        : '<option value="">(无可用游戏)</option>';
+
+
+      const fallback = state.games[0]?.id || '';
+      state.selectedGameId = state.selectedGameId && state.games.some((g) => g.id === state.selectedGameId)
+        ? state.selectedGameId
+        : fallback;
+      s.value = state.selectedGameId;
+
+      const g = getSelectedGame();
+      $('customVideoUrl').value = g?.videoUrl || '';
+      $('customPlanUrl').value = g?.planUrl || '';
+      saveBasic();
+    }
+
+    function applyVideoUrl() {
+      const url = $('customVideoUrl').value.trim();
+      if (!url) return appendLog('warn', '视频地址为空');
+      videoEl.src = url;
+      videoEl.load();
+      appendLog('info', '已应用视频地址', { url });
+    }
+
     async function loadPlanFromUrl(url) {
-      if (!url) return appendLog('warn', '脚本地址为空，已忽略');
+      if (!url) return appendLog('warn', '脚本地址为空');
       try {
         const resp = await fetch(url, { cache: 'no-store' });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
         let rows = [];
-        if (/\.csv($|\?)/i.test(url)) {
-          rows = await parseCsvText(await resp.text());
-        } else if (/\.(xlsx|xls)($|\?)/i.test(url)) {
+        if (/\.csv($|\?)/i.test(url)) rows = await parseCsvText(await resp.text());
+        else if (/\.(xlsx|xls)($|\?)/i.test(url)) {
+
           if (typeof XLSX === 'undefined') throw new Error('XLSX 库加载失败');
           const wb = XLSX.read(await resp.arrayBuffer(), { type: 'array' });
           const sheet = wb.Sheets[wb.SheetNames[0]];
@@ -350,6 +571,8 @@
           if (!Array.isArray(json)) throw new Error('JSON 脚本必须是数组');
           rows = json.map(normalizeRow);
         }
+
+
         state.scriptRows = rows;
         renderScriptRows();
         rebuildEvents();
@@ -361,7 +584,9 @@
 
     async function applyGameConfig() {
       const g = getSelectedGame();
-      if (!g) return appendLog('warn', '当前没有可用游戏配置');
+
+      if (!g) return appendLog('warn', '没有可用游戏');
+
       $('customVideoUrl').value = g.videoUrl || '';
       $('customPlanUrl').value = g.planUrl || '';
       applyVideoUrl();
@@ -371,7 +596,9 @@
 
     function sendCommand(command, device, timeSec) {
       if (!state.wsConnected || !state.imReady) {
-        appendLog('warn', 'IM 未就绪，脚本事件跳过', { command, device, timeSec });
+
+        appendLog('warn', 'IM 未就绪，跳过发送', { command, device, timeSec });
+
         return false;
       }
       YiDimension.send(command);
@@ -402,75 +629,129 @@
       state.scriptRows = rows;
       renderScriptRows();
       rebuildEvents();
-      appendLog('info', '脚本导入完成', { rows: rows.length, file: file.name });
+
+      appendLog('info', '脚本导入完成', { file: file.name, rows: rows.length });
+
     }
 
     function downloadCsv() {
       const lines = state.scriptRows.map((r) => [r.t1 || '', r.c1 || '', r.t2 || '', r.c2 || ''].join(','));
+
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' }));
+      a.href = URL.createObjectURL(blob);
       a.download = `${state.selectedGameId || 'script'}-${Date.now()}.csv`;
       a.click();
       URL.revokeObjectURL(a.href);
-      appendLog('info', '已导出 CSV');
+      appendLog('info', 'CSV 导出成功');
+
     }
 
     function bindEvents() {
       YiDimension.onLog = (level, msg) => appendLog(level, msg);
-      YiDimension.onStatusChange = (ws, im) => { state.wsConnected = !!ws; state.imReady = !!im; refreshStatus(); };
 
-      $('uid').addEventListener('input', () => { state.uid = $('uid').value.trim(); saveBasicInputs(); });
-      $('token').addEventListener('input', () => { state.token = $('token').value.trim(); refreshPayloadPreview(); saveBasicInputs(); });
-      $('manualCommand').addEventListener('input', () => { state.manualCommand = $('manualCommand').value.trim(); refreshPayloadPreview(); saveBasicInputs(); });
+      YiDimension.onStatusChange = (ws, im) => {
+        state.wsConnected = !!ws;
+        state.imReady = !!im;
+        refreshStatus();
+      };
 
-      $('connectBtn').addEventListener('click', () => { appendLog('info', '开始连接网关...'); YiDimension.connect(); });
-      $('loginBtn').addEventListener('click', () => {
-        if (!state.uid || !state.token) return appendLog('warn', '请先输入 UID 和 Token');
-        appendLog('info', `尝试登录 IM，UID=${state.uid}`);
-        YiDimension.login(state.uid, state.token);
+      $('uid').value = state.uid;
+      $('token').value = state.token;
+      $('manualCommand').value = state.manualCommand;
+
+      $('connectCode').addEventListener('blur', () => {
+        const parsed = parseConnectCode($('connectCode').value);
+        if (!parsed) return;
+        state.uid = parsed.uid;
+        state.token = parsed.token;
+        $('uid').value = parsed.uid;
+        $('token').value = parsed.token;
+        saveBasic();
+        appendLog('info', '已自动解析 UID/Token');
       });
+
+      $('parseConnectBtn').addEventListener('click', () => {
+        const parsed = parseConnectCode($('connectCode').value);
+        if (!parsed) return appendLog('warn', '解析失败：请按“uid token”格式粘贴');
+        state.uid = parsed.uid;
+        state.token = parsed.token;
+        $('uid').value = parsed.uid;
+        $('token').value = parsed.token;
+        saveBasic();
+        appendLog('info', '解析成功，已自动填入');
+      });
+
+      $('uid').addEventListener('input', () => { state.uid = $('uid').value.trim(); saveBasic(); });
+      $('token').addEventListener('input', () => { state.token = $('token').value.trim(); saveBasic(); });
+      $('manualCommand').addEventListener('input', () => { state.manualCommand = $('manualCommand').value.trim(); saveBasic(); });
+
+      $('connectBtn').addEventListener('click', () => { appendLog('info', '开始连接网关'); YiDimension.connect(); });
+      $('loginBtn').addEventListener('click', () => {
+        if (!state.uid || !state.token) return appendLog('warn', '请先填写 UID 和 Token');
+        YiDimension.login(state.uid, state.token);
+        appendLog('info', `登录请求已发送 uid=${state.uid}`);
+      });
+
+      $('gameSelect').addEventListener('change', () => {
+        state.selectedGameId = $('gameSelect').value;
+        const g = getSelectedGame();
+        $('customVideoUrl').value = g?.videoUrl || '';
+        $('customPlanUrl').value = g?.planUrl || '';
+        saveBasic();
+      });
+
+      $('applyGameBtn').addEventListener('click', applyGameConfig);
+      $('playScriptBtn').addEventListener('click', async () => {
+        state.playbackEnabled = true;
+        resetFiredByCurrentTime();
+        try {
+          await videoEl.play();
+          appendLog('info', '视频播放中，脚本触发已启用');
+        } catch (err) {
+          appendLog('error', '视频播放失败', { message: err?.message || String(err) });
+        }
+      });
+      $('pauseScriptBtn').addEventListener('click', () => { videoEl.pause(); appendLog('info', '视频已暂停'); });
+      $('cacheVideoBtn').addEventListener('click', cacheCurrentVideo);
+
       $('manualSendBtn').addEventListener('click', () => {
-        if (!state.manualCommand) return appendLog('warn', '默认指令为空');
+        if (!state.manualCommand) return appendLog('warn', '手动指令为空');
         sendCommand(state.manualCommand, 'manual', videoEl.currentTime || 0);
       });
+      $('resetScriptBtn').addEventListener('click', () => { resetFiredByCurrentTime(); appendLog('info', '已重置触发状态'); });
 
-      $('gameSelect').addEventListener('change', () => { state.selectedGameId = $('gameSelect').value; renderGameMeta(); saveBasicInputs(); });
-      $('applyGameBtn').addEventListener('click', applyGameConfig);
-      $('applyVideoBtn').addEventListener('click', applyVideoUrl);
       $('loadPlanBtn').addEventListener('click', () => loadPlanFromUrl($('customPlanUrl').value.trim()));
 
       $('addRowBtn').addEventListener('click', () => { state.scriptRows.push(normalizeRow({})); renderScriptRows(); });
       $('rebuildEventsBtn').addEventListener('click', rebuildEvents);
       $('downloadCsvBtn').addEventListener('click', downloadCsv);
-      $('importFile').addEventListener('change', async (e) => { const f = e.target.files?.[0]; if (f) await importFile(f); e.target.value = ''; });
 
-      $('playScriptBtn').addEventListener('click', async () => {
-        state.playbackEnabled = true;
-        resetFiredByCurrentTime();
-        try { await videoEl.play(); appendLog('info', '视频播放中，脚本触发已启用'); }
-        catch (err) { appendLog('error', '视频播放失败', { message: err?.message || String(err) }); }
+      $('importFile').addEventListener('change', async (e) => {
+        const f = e.target.files?.[0];
+        if (f) await importFile(f);
+        e.target.value = '';
       });
-      $('pauseScriptBtn').addEventListener('click', () => { videoEl.pause(); appendLog('info', '视频已暂停'); });
-      $('resetScriptBtn').addEventListener('click', () => { resetFiredByCurrentTime(); appendLog('info', '已按当前视频时间重置触发状态'); });
+
 
       videoEl.addEventListener('timeupdate', () => { refreshStatus(); tickDispatch(); });
       videoEl.addEventListener('seeked', () => {
         resetFiredByCurrentTime();
-        appendLog('status', '检测到拖动/跳转，已重同步触发状态', { currentTime: fmtSec(videoEl.currentTime) });
+
+        appendLog('status', '检测到拖动/跳转，触发状态已重同步', { currentTime: fmtSec(videoEl.currentTime) });
+
       });
 
       $('clearLogBtn').addEventListener('click', () => { logBox.textContent = ''; appendLog('info', '日志已清空'); });
     }
 
     async function boot() {
-      $('uid').value = state.uid;
-      $('token').value = state.token;
-      $('manualCommand').value = state.manualCommand;
-      refreshPayloadPreview();
+
       bindEvents();
       refreshStatus();
-
-      appendLog('info', `页面初始化完成，开始探测 assets 目录并连接网关`);
+      detectNetworkInfo();
+      await registerServiceWorker();
+      appendLog('info', '页面初始化完成，开始加载游戏列表并连接网关');
 
 
       await loadGamesList();
@@ -481,6 +762,7 @@
     }
 
     boot();
+
 
   </script>
 </body>
