@@ -23,12 +23,9 @@
     },
 
     _buildWsUrl() {
-      // 允许临时强制指定：window.YIDIMENSION_WS_URL="ws://106.14.83.149:3001"
       if (global.YIDIMENSION_WS_URL) return String(global.YIDIMENSION_WS_URL);
-
-      // ✅ 方案 B：直连 3001（不走 nginx /ws 反代）
       const protocol = location.protocol === "https:" ? "wss" : "ws";
-      const host = location.hostname; // 只取域名/IP，不带端口
+      const host = location.hostname;
       return `${protocol}://${host}:3001`;
     },
 
@@ -114,15 +111,14 @@
         this._emitLog("warn", "WS 未连接，无法 login（等重连成功后再点登录）");
         return;
       }
-      // ✅ 记录 token，供 game_cmd 发送时按官方格式带上
-      // 官方说明：token 为“用户token，不含uid”
       this._token = String(token || "").trim();
 
       this._emitLog("info", `开始登录（UID: ${uid}）`);
       this.socket.send(JSON.stringify({ type: "login", uid, token }));
     },
 
-    send(value) {
+    // 固定发送“开发游戏”协议：game_cmd
+    send(commandId) {
       if (!this.socket || this.socket.readyState !== 1) {
         this._emitLog("warn", "WS 未连接，无法 send");
         return;
@@ -132,29 +128,21 @@
         return;
       }
 
-      // ✅ 严格按官方“游戏开发 / game_cmd”结构
-      // payload.text 内应为 JSON：
-      // { "code": "game_cmd", "id": "<commandId>", "token": "<token(不含uid)>" }
-      const commandId = String(value ?? "").trim();
       const token = String(this._token || "").trim();
+      const id = String(commandId ?? "").trim();
 
-      const payload = {
-        code: "game_cmd",
-        id: commandId,
-        token
-      };
-
-      if (!payload.id) {
-        this._emitLog("warn", "commandId 为空，已取消发送", payload);
+      if (!token) {
+        this._emitLog("warn", "token 为空：请先登录");
         return;
       }
-      if (!payload.token) {
-        this._emitLog("warn", "token 为空：官方格式要求 token（不含uid），请先登录", payload);
+      if (!id) {
+        this._emitLog("warn", "commandId 为空，已取消发送");
         return;
       }
 
-      this._emitLog("info", "发送指令", payload);
-      this.socket.send(JSON.stringify({ type: "sendCommand", payload }));
+      const payload = { code: 'game_cmd', id, token };
+      this._emitLog('info', '发送指令(game_cmd)', payload);
+      this.socket.send(JSON.stringify({ type: 'sendCommand', payload }));
     },
 
     logout() {
