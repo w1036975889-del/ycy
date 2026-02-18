@@ -41,13 +41,18 @@ function safeJsonParse(str) {
 }
 
 function normalizeUid(input) {
-  // ✅ 统一使用“不带 game_ 前缀”的纯 UID
+  // 统一转为“不带 game_ 前缀”的纯 UID
   // - 输入 game_30033 => 30033
   // - 输入 30033      => 30033
   if (!input) return null;
   const s = String(input).trim();
   if (!s) return null;
   return s.startsWith('game_') ? s.slice(5) : s;
+}
+
+function toGameUid(input) {
+  const uid = normalizeUid(input);
+  return uid ? `game_${uid}` : null;
 }
 
 function stripGamePrefix(id) {
@@ -142,17 +147,18 @@ class ChatClient {
   }
 
   async _initIM(timeout = 15000) {
-    const uid = this.state.uid;
+    const uid = normalizeUid(this.state.uid);
+    const gameUid = toGameUid(uid);
     const token = this.state.token;
 
-    this._emit('log', { level: 'info', msg: `正在获取 IM 签名: uid=${uid}` });
-    const { appId, userSig, userId } = await requestGameSign(uid, token);
+    this._emit('log', { level: 'info', msg: `正在获取 IM 签名: uid=${gameUid}` });
+    const { appId, userSig } = await requestGameSign(gameUid, token);
 
     this.state.appId = appId;
     this.state.userSig = userSig;
-    // ✅ IM 登录 userID 强制使用纯 UID（不带 game_）
-    // game_sign 返回的 userId 可能带 game_ 前缀，但你已验证带 game_ 时 App 不响应
-    this.state.userId = normalizeUid(uid);
+    // 官方 IM 规范：登录 userID 必须使用 game_ 前缀账号
+    // 发送目标 to 仍然使用纯 UID（不带 game_）
+    this.state.userId = gameUid;
 
     // provide WebSocket implementation for Node
     // TencentCloudChat on Node expects global WebSocket
