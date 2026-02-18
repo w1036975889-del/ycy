@@ -83,7 +83,6 @@ function parseUidToken(uidInput, tokenInput) {
     usedConnectCode: tokenParts.length >= 2 || uidParts.length >= 2,
   };
 }
-
 function stripGamePrefix(id) {
   const s = String(id || '').trim();
   return s.startsWith('game_') ? s.slice(5) : s;
