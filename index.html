@@ -7,132 +7,33 @@
   <script src="yidimension-sdk.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    :root {
-      color-scheme: dark;
-      --bg: #0f1220;
-      --panel: #171b2f;
-      --line: #2a3155;
-      --text: #e8ecff;
-      --muted: #9fa9d8;
-      --ok: #2ecc71;
-      --warn: #f1c40f;
-      --bad: #e74c3c;
-      --accent: #5b7cff;
-      --chip: #2b356f;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "PingFang SC", sans-serif;
-      background: radial-gradient(circle at top, #1a2040 0%, var(--bg) 50%);
-      color: var(--text);
-      min-height: 100vh;
-      padding: 18px;
-    }
-    .wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
-    .card {
-      background: linear-gradient(180deg, #1b2140, var(--panel));
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 14px;
-    }
-    h1,h2,h3 { margin: 0 0 10px; }
-    .small { color: var(--muted); font-size: 12px; }
-    .row { display: grid; gap: 10px; }
-    .grid-4 { grid-template-columns: repeat(4, minmax(0,1fr)); }
-    .grid-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
-    .grid-2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
-    .status-row { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; }
-    .status-pill {
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 8px 10px;
-      display: flex;
-      justify-content: space-between;
-      background: rgba(255,255,255,.03);
-      font-size: 12px;
-      gap: 8px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    input, select {
-      width: 100%;
-      padding: 9px 10px;
-      border-radius: 10px;
-      border: 1px solid var(--line);
-      background: #0f1430;
-      color: var(--text);
-    }
-    label span { display:block; margin-bottom:4px; }
-    .btns { display:flex; flex-wrap: wrap; gap:8px; margin-top:8px; }
-    button {
-      border: 1px solid #33408a;
-      background: #243069;
-      color: #f0f4ff;
-      border-radius: 10px;
-      padding: 8px 12px;
-      cursor: pointer;
-    }
-    button.primary { background: var(--accent); border-color: #6f8dff; }
-    button.warn { background: #7a5d1c; border-color: #c8a03c; }
-    button:disabled { opacity: .5; cursor: not-allowed; }
-
-    .video-layout { display:grid; grid-template-columns: 1.3fr .9fr; gap: 12px; }
-    video {
-      width: 100%;
-      max-height: 460px;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      background: #02030a;
-    }
-    .chips { display:flex; flex-wrap: wrap; gap:6px; }
-    .chip {
-      border: 1px solid #3f4d9e;
-      border-radius: 999px;
-      padding: 4px 10px;
-      font-size: 12px;
-      background: var(--chip);
-      color: #e9eeff;
-    }
-
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th, td { border: 1px solid #34407e; padding: 6px; }
-    th { background: #1d2552; position: sticky; top: 0; z-index: 1; }
-    .script-wrap { max-height: 330px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
-    .muted { color: var(--muted); }
-
-    .preview, #logBox {
-      background: #0b0f22;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 10px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 12px;
-      line-height: 1.45;
-      white-space: pre-wrap;
-      margin: 0;
-    }
-    #logBox { max-height: 260px; overflow: auto; }
-    .danger { color: #ff9e9e; }
-
-    @media (max-width: 980px) {
-      .video-layout { grid-template-columns: 1fr; }
-      .grid-4, .grid-3, .grid-2, .status-row { grid-template-columns: 1fr; }
-    }
+    :root { color-scheme: dark; --bg:#0f1220; --panel:#171b2f; --line:#2a3155; --text:#e8ecff; --muted:#9fa9d8; --accent:#5b7cff; --chip:#2b356f; }
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"PingFang SC",sans-serif;background:radial-gradient(circle at top,#1a2040 0%,var(--bg) 50%);color:var(--text);min-height:100vh;padding:18px}
+    .wrap{max-width:1180px;margin:0 auto;display:grid;gap:14px}.card{background:linear-gradient(180deg,#1b2140,var(--panel));border:1px solid var(--line);border-radius:14px;padding:14px}
+    h1,h2,h3{margin:0 0 10px}.small{color:var(--muted);font-size:12px}.row{display:grid;gap:10px}.grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .status-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}.status-pill{border:1px solid var(--line);border-radius:999px;padding:8px 10px;display:flex;justify-content:space-between;background:rgba(255,255,255,.03);font-size:12px;gap:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    input,select{width:100%;padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:#0f1430;color:var(--text)} label span{display:block;margin-bottom:4px}
+    .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px} button{border:1px solid #33408a;background:#243069;color:#f0f4ff;border-radius:10px;padding:8px 12px;cursor:pointer} button.primary{background:var(--accent);border-color:#6f8dff} button.warn{background:#7a5d1c;border-color:#c8a03c} button:disabled{opacity:.5;cursor:not-allowed}
+    .video-layout{display:grid;grid-template-columns:1.3fr .9fr;gap:12px} video{width:100%;max-height:460px;border-radius:12px;border:1px solid var(--line);background:#02030a}
+    .chips{display:flex;flex-wrap:wrap;gap:6px}.chip{border:1px solid #3f4d9e;border-radius:999px;padding:4px 10px;font-size:12px;background:var(--chip);color:#e9eeff}
+    table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #34407e;padding:6px}th{background:#1d2552;position:sticky;top:0;z-index:1}.script-wrap{max-height:330px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+    .preview,#logBox{background:#0b0f22;border:1px solid var(--line);border-radius:10px;padding:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.45;white-space:pre-wrap;margin:0}#logBox{max-height:260px;overflow:auto}
+    .danger{color:#ff9e9e}
+    @media (max-width:980px){.video-layout,.grid-4,.grid-3,.status-row{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
   <div class="wrap">
     <section class="card">
       <h1>YiDimension 视频脚本联动控制台</h1>
-      <p class="small">支持：游戏选择 → 自动带入视频/脚本；脚本可手动增删；Excel(A-D列)导入；按视频秒数精确触发（支持回退后重同步）。</p>
+      <p class="small">游戏数据由 <code>assets/games.json</code> 驱动；脚本默认来自 <code>assets/plans</code>；视频默认来自 <code>assets/videos</code>（也支持外链）。</p>
       <div class="status-row">
         <div class="status-pill"><span>WebSocket</span><span id="wsState">未连接</span></div>
         <div class="status-pill"><span>IM 状态</span><span id="imState">未就绪</span></div>
         <div class="status-pill"><span>视频时间</span><span id="videoTime">0.00s</span></div>
         <div class="status-pill"><span>脚本事件</span><span id="eventCount">0</span></div>
         <div class="status-pill"><span>已触发</span><span id="firedCount">0</span></div>
+        <div class="status-pill"><span>游戏列表</span><span id="gameSource">加载中</span></div>
       </div>
     </section>
 
@@ -153,23 +54,15 @@
     <section class="card">
       <h2>2) 游戏选择 + 视频来源</h2>
       <div class="row grid-4">
-        <label>
-          <span class="small">选择游戏模板</span>
-          <select id="gameSelect"></select>
-        </label>
-        <label>
-          <span class="small">视频来源（模板中可混合：服务器/CDN/托管）</span>
-          <select id="videoSelect"></select>
-        </label>
-        <label>
-          <span class="small">自定义视频 URL（可覆盖）</span>
-          <input id="customVideoUrl" placeholder="https://... 或 /video/demo.mp4" />
-        </label>
+        <label><span class="small">选择游戏（来自 games.json）</span><select id="gameSelect"></select></label>
+        <label><span class="small">视频地址（可覆盖）</span><input id="customVideoUrl" placeholder="/assets/videos/xxx.mp4 或 https://..." /></label>
+        <label><span class="small">脚本地址（可覆盖）</span><input id="customPlanUrl" placeholder="/assets/plans/xxx.csv 或 .xlsx" /></label>
         <div>
           <span class="small">操作</span>
           <div class="btns" style="margin-top:4px;">
-            <button id="applyGameBtn" class="primary" type="button">应用游戏模板</button>
-            <button id="applyVideoBtn" type="button">应用视频地址</button>
+            <button id="applyGameBtn" class="primary" type="button">应用游戏配置</button>
+            <button id="loadPlanBtn" type="button">仅加载脚本文件</button>
+            <button id="applyVideoBtn" type="button">仅应用视频地址</button>
           </div>
         </div>
       </div>
@@ -185,41 +78,26 @@
           <button id="pauseScriptBtn" type="button">暂停</button>
           <button id="resetScriptBtn" class="warn" type="button">重置触发状态（按当前时间重算）</button>
         </div>
-        <p class="small">关键细节：脚本触发以 <b>video.currentTime</b> 为唯一时间源。用户拖动/回退后会自动重算已触发区间，保证脚本与画面同步。</p>
+        <p class="small">同步规则：只看 <b>video.currentTime</b>。拖动回退/快进后自动重算，脚本与视频保持一致。</p>
       </div>
-
       <div>
         <h3>4) 当前发送预览</h3>
         <pre class="preview" id="payloadPreview">{"code":"game_cmd","id":"","token":"(空)"}</pre>
-        <p class="small">脚本行将转换成事件：设备1(A/B) 与 设备2(C/D)。</p>
       </div>
     </section>
 
     <section class="card">
-      <h2>5) 脚本编辑（Excel 兼容）</h2>
-      <p class="small">格式：A列=设备1时间(s), B列=设备1指令, C列=设备2时间(s), D列=设备2指令。可手动添加行，或导入 CSV/XLSX。</p>
+      <h2>5) 脚本编辑（Excel A/B/C/D）</h2>
+      <p class="small">A=设备1时间(s)；B=设备1指令；C=设备2时间(s)；D=设备2指令。可手动编辑，也可导入文件。</p>
       <div class="btns">
         <button id="addRowBtn" type="button">+ 添加脚本行</button>
         <button id="rebuildEventsBtn" type="button">重建事件</button>
         <button id="downloadCsvBtn" type="button">导出 CSV</button>
-        <label class="chip" style="cursor:pointer;">
-          导入 CSV/XLSX
-          <input id="importFile" type="file" accept=".csv,.xlsx,.xls" style="display:none;" />
-        </label>
+        <label class="chip" style="cursor:pointer;">导入 CSV/XLSX<input id="importFile" type="file" accept=".csv,.xlsx,.xls" style="display:none;" /></label>
       </div>
-
       <div class="script-wrap" style="margin-top:8px;">
         <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>A 设备1时间(s)</th>
-              <th>B 设备1指令</th>
-              <th>C 设备2时间(s)</th>
-              <th>D 设备2指令</th>
-              <th>操作</th>
-            </tr>
-          </thead>
+          <thead><tr><th>#</th><th>A 设备1时间(s)</th><th>B 设备1指令</th><th>C 设备2时间(s)</th><th>D 设备2指令</th><th>操作</th></tr></thead>
           <tbody id="scriptBody"></tbody>
         </table>
       </div>
@@ -238,68 +116,33 @@
     const logBox = $('logBox');
     const videoEl = $('video');
 
-    const gameTemplates = [
-      {
-        id: 'blank',
-        name: '空白模板（手动配置）',
-        tags: ['自定义', '新建'],
-        videos: [
-          { label: '本地服务器示例 /video/demo.mp4', url: '/video/demo.mp4' },
-          { label: '托管示例 https://example.com/game.mp4', url: 'https://example.com/game.mp4' }
-        ],
-        scriptRows: [
-          { t1: 3, c1: 'hurt', t2: 3.2, c2: 'hurt_2' },
-          { t1: 9, c1: '_stop_all', t2: '', c2: '' }
-        ]
-      },
-      {
-        id: 'demo-rhythm',
-        name: '节奏挑战（示例）',
-        tags: ['服务器视频', '托管视频', '双设备'],
-        videos: [
-          { label: '服务器：/assets/rhythm.mp4', url: '/assets/rhythm.mp4' },
-          { label: '托管：CDN 节奏版', url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' }
-        ],
-        scriptRows: [
-          { t1: 1.2, c1: 'd1_soft', t2: 1.6, c2: 'd2_soft' },
-          { t1: 3.0, c1: 'd1_mid', t2: 3.2, c2: 'd2_mid' },
-          { t1: 6.5, c1: 'd1_peak', t2: 6.8, c2: 'd2_peak' },
-          { t1: 9.5, c1: '_stop_all', t2: 9.5, c2: '_stop_all' }
-        ]
-      }
-    ];
-
     const state = {
       wsConnected: false,
       imReady: false,
       uid: localStorage.getItem('yid_uid') || '',
       token: localStorage.getItem('yid_token') || '',
       manualCommand: localStorage.getItem('yid_manual_command') || 'hurt',
-      selectedGameId: localStorage.getItem('yid_game_id') || 'blank',
-      selectedVideoIndex: Number(localStorage.getItem('yid_video_idx') || 0),
+      selectedGameId: localStorage.getItem('yid_game_id') || '',
+      games: [],
       scriptRows: [],
       events: [],
-      playbackEnabled: false
+      playbackEnabled: false,
+      activeGame: null
     };
 
     function appendLog(level, msg, extra) {
-      const time = new Date().toLocaleTimeString();
-      const suffix = extra ? ` ${JSON.stringify(extra)}` : '';
-      logBox.textContent += `[${time}] [${level}] ${msg}${suffix}\n`;
+      const t = new Date().toLocaleTimeString();
+      const tail = extra ? ` ${JSON.stringify(extra)}` : '';
+      logBox.textContent += `[${t}] [${level}] ${msg}${tail}\n`;
       logBox.scrollTop = logBox.scrollHeight;
     }
-
-    function fmtSec(s) {
-      const n = Number(s || 0);
-      return Number.isFinite(n) ? n.toFixed(2) : '0.00';
-    }
+    const fmtSec = (s) => Number.isFinite(Number(s)) ? Number(s).toFixed(2) : '0.00';
 
     function saveBasicInputs() {
       localStorage.setItem('yid_uid', state.uid);
       localStorage.setItem('yid_token', state.token);
       localStorage.setItem('yid_manual_command', state.manualCommand);
       localStorage.setItem('yid_game_id', state.selectedGameId);
-      localStorage.setItem('yid_video_idx', String(state.selectedVideoIndex));
     }
 
     function refreshStatus() {
@@ -312,84 +155,91 @@
     }
 
     function refreshPayloadPreview() {
-      const tokenMasked = state.token ? '***' : '(空)';
-      const preview = { code: 'game_cmd', id: state.manualCommand || '', token: tokenMasked };
+      const preview = { code: 'game_cmd', id: state.manualCommand || '', token: state.token ? '***' : '(空)' };
       $('payloadPreview').textContent = JSON.stringify(preview);
     }
 
+    async function loadGamesList() {
+      try {
+        const resp = await fetch('/assets/games.json', { cache: 'no-store' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const arr = await resp.json();
+        if (!Array.isArray(arr)) throw new Error('games.json 必须是数组');
+        state.games = arr.filter(Boolean);
+        $('gameSource').textContent = `已加载 ${state.games.length} 个`;
+        appendLog('info', 'games.json 加载成功', { count: state.games.length });
+      } catch (err) {
+        $('gameSource').textContent = '加载失败';
+        appendLog('error', '加载 assets/games.json 失败', { message: err?.message || String(err) });
+        state.games = [];
+      }
+    }
+
     function getSelectedGame() {
-      return gameTemplates.find((g) => g.id === state.selectedGameId) || gameTemplates[0];
+      return state.games.find((g) => g.id === state.selectedGameId) || state.games[0] || null;
     }
 
     function renderGameSelect() {
-      $('gameSelect').innerHTML = gameTemplates
-        .map((g) => `<option value="${g.id}">${g.name}</option>`)
-        .join('');
-      $('gameSelect').value = getSelectedGame().id;
+      const s = $('gameSelect');
+      s.innerHTML = state.games.length
+        ? state.games.map((g) => `<option value="${g.id}">${g.name || g.id}</option>`).join('')
+        : '<option value="">(无可用游戏)</option>';
+
+      const fallbackId = state.games[0]?.id || '';
+      state.selectedGameId = state.selectedGameId && state.games.some((g) => g.id === state.selectedGameId)
+        ? state.selectedGameId
+        : fallbackId;
+
+      s.value = state.selectedGameId;
       renderGameMeta();
-      renderVideoSelect();
+      saveBasicInputs();
     }
 
     function renderGameMeta() {
       const g = getSelectedGame();
-      $('gameMeta').innerHTML = g.tags.map((t) => `<span class="chip">${t}</span>`).join('');
-    }
-
-    function renderVideoSelect() {
-      const g = getSelectedGame();
-      const idx = Math.min(state.selectedVideoIndex, g.videos.length - 1);
-      state.selectedVideoIndex = Math.max(0, idx);
-      $('videoSelect').innerHTML = g.videos
-        .map((v, i) => `<option value="${i}">${v.label}</option>`)
-        .join('');
-      $('videoSelect').value = String(state.selectedVideoIndex);
-      $('customVideoUrl').value = g.videos[state.selectedVideoIndex]?.url || '';
+      state.activeGame = g;
+      if (!g) {
+        $('gameMeta').innerHTML = '<span class="chip">未加载游戏配置</span>';
+        return;
+      }
+      const tags = Array.isArray(g.tags) ? g.tags : [];
+      const chips = [
+        `ID: ${g.id}`,
+        `视频: ${g.videoUrl || '(空)'}`,
+        `脚本: ${g.planUrl || '(空)'}`,
+        ...tags
+      ];
+      $('gameMeta').innerHTML = chips.map((x) => `<span class="chip">${x}</span>`).join('');
+      $('customVideoUrl').value = g.videoUrl || '';
+      $('customPlanUrl').value = g.planUrl || '';
     }
 
     function applyVideoUrl() {
       const raw = $('customVideoUrl').value.trim();
-      if (!raw) {
-        appendLog('warn', '视频地址为空，已忽略');
-        return;
-      }
+      if (!raw) return appendLog('warn', '视频地址为空，已忽略');
       videoEl.src = raw;
       videoEl.load();
       appendLog('info', '已应用视频地址', { url: raw });
     }
 
-    function normalizeRow(row) {
-      return {
-        t1: row?.t1 ?? '',
-        c1: row?.c1 ?? '',
-        t2: row?.t2 ?? '',
-        c2: row?.c2 ?? ''
-      };
-    }
+    function normalizeRow(row) { return { t1: row?.t1 ?? '', c1: row?.c1 ?? '', t2: row?.t2 ?? '', c2: row?.c2 ?? '' }; }
 
     function renderScriptRows() {
       const body = $('scriptBody');
       body.innerHTML = '';
       state.scriptRows.forEach((row, i) => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${i + 1}</td>
-          <td><input data-row="${i}" data-key="t1" value="${row.t1}" placeholder="秒" /></td>
-          <td><input data-row="${i}" data-key="c1" value="${row.c1}" placeholder="如 d1_soft" /></td>
-          <td><input data-row="${i}" data-key="t2" value="${row.t2}" placeholder="秒" /></td>
-          <td><input data-row="${i}" data-key="c2" value="${row.c2}" placeholder="如 d2_soft" /></td>
-          <td><button data-remove="${i}" type="button">删除</button></td>
-        `;
+        tr.innerHTML = `<td>${i + 1}</td><td><input data-row="${i}" data-key="t1" value="${row.t1}" /></td><td><input data-row="${i}" data-key="c1" value="${row.c1}" /></td><td><input data-row="${i}" data-key="t2" value="${row.t2}" /></td><td><input data-row="${i}" data-key="c2" value="${row.c2}" /></td><td><button data-remove="${i}" type="button">删除</button></td>`;
         body.appendChild(tr);
       });
 
       body.querySelectorAll('input[data-row]').forEach((el) => {
         el.addEventListener('input', () => {
-          const rowIndex = Number(el.getAttribute('data-row'));
+          const idx = Number(el.getAttribute('data-row'));
           const key = el.getAttribute('data-key');
-          state.scriptRows[rowIndex][key] = el.value.trim();
+          state.scriptRows[idx][key] = el.value.trim();
         });
       });
-
       body.querySelectorAll('button[data-remove]').forEach((btn) => {
         btn.addEventListener('click', () => {
           const idx = Number(btn.getAttribute('data-remove'));
@@ -400,47 +250,83 @@
       });
     }
 
-    function parseScriptRowsToEvents(rows) {
-      const events = [];
-      const warnings = [];
-
-      rows.forEach((row, index) => {
-        const rn = index + 1;
-        const pushEvent = (device, tRaw, cmdRaw) => {
+    function parseRowsToEvents(rows) {
+      const events = []; const warnings = [];
+      rows.forEach((row, i) => {
+        const rn = i + 1;
+        const push = (device, tRaw, cmdRaw) => {
           const cmd = String(cmdRaw || '').trim();
           const t = Number(String(tRaw).trim());
           if (!cmd && String(tRaw).trim() === '') return;
-          if (!cmd || !Number.isFinite(t) || t < 0) {
-            warnings.push(`第${rn}行 设备${device} 数据无效：time=${tRaw}, cmd=${cmdRaw}`);
-            return;
-          }
+          if (!cmd || !Number.isFinite(t) || t < 0) return warnings.push(`第${rn}行设备${device}格式无效`);
           events.push({ id: `${rn}-${device}-${cmd}`, row: rn, device, time: t, command: cmd, fired: false });
         };
-
-        pushEvent(1, row.t1, row.c1);
-        pushEvent(2, row.t2, row.c2);
+        push(1, row.t1, row.c1);
+        push(2, row.t2, row.c2);
       });
-
       events.sort((a, b) => a.time - b.time);
       return { events, warnings };
     }
 
+    function resetFiredByCurrentTime() {
+      const t = Number(videoEl.currentTime || 0);
+      state.events.forEach((e) => { e.fired = e.time < t; });
+      refreshStatus();
+    }
+
     function rebuildEvents() {
-      const parsed = parseScriptRowsToEvents(state.scriptRows);
+      const parsed = parseRowsToEvents(state.scriptRows);
       state.events = parsed.events;
       $('scriptWarn').textContent = parsed.warnings.join('；');
       if (parsed.warnings.length) appendLog('warn', '脚本存在格式警告', parsed.warnings);
       resetFiredByCurrentTime();
-      refreshStatus();
       appendLog('info', '脚本事件已重建', { count: state.events.length });
     }
 
-    function resetFiredByCurrentTime() {
-      const t = Number(videoEl.currentTime || 0);
-      state.events.forEach((e) => {
-        e.fired = e.time < t;
+    async function parseCsvText(text) {
+      const lines = text.split(/\r?\n/).filter((l) => l.trim());
+      return lines.map((line) => {
+        const c = line.split(',').map((v) => v.trim());
+        return normalizeRow({ t1: c[0] || '', c1: c[1] || '', t2: c[2] || '', c2: c[3] || '' });
       });
-      refreshStatus();
+    }
+
+    async function loadPlanFromUrl(url) {
+      if (!url) return appendLog('warn', '脚本地址为空，已忽略');
+      try {
+        const resp = await fetch(url, { cache: 'no-store' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        let rows = [];
+        if (/\.csv($|\?)/i.test(url)) {
+          rows = await parseCsvText(await resp.text());
+        } else if (/\.(xlsx|xls)($|\?)/i.test(url)) {
+          if (typeof XLSX === 'undefined') throw new Error('XLSX 库加载失败');
+          const wb = XLSX.read(await resp.arrayBuffer(), { type: 'array' });
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          const arr = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+          rows = arr.map((r) => normalizeRow({ t1: r[0] ?? '', c1: r[1] ?? '', t2: r[2] ?? '', c2: r[3] ?? '' }));
+        } else {
+          const json = await resp.json();
+          if (!Array.isArray(json)) throw new Error('JSON 脚本必须是数组');
+          rows = json.map(normalizeRow);
+        }
+        state.scriptRows = rows;
+        renderScriptRows();
+        rebuildEvents();
+        appendLog('info', '脚本加载成功', { url, rows: rows.length });
+      } catch (err) {
+        appendLog('error', '脚本加载失败', { url, message: err?.message || String(err) });
+      }
+    }
+
+    async function applyGameConfig() {
+      const g = getSelectedGame();
+      if (!g) return appendLog('warn', '当前没有可用游戏配置');
+      $('customVideoUrl').value = g.videoUrl || '';
+      $('customPlanUrl').value = g.planUrl || '';
+      applyVideoUrl();
+      await loadPlanFromUrl(g.planUrl || '');
+      appendLog('info', '游戏配置已应用', { game: g.name || g.id });
     }
 
     function sendCommand(command, device, timeSec) {
@@ -449,68 +335,40 @@
         return false;
       }
       YiDimension.send(command);
-      appendLog('send', `脚本触发 设备${device} @${fmtSec(timeSec)}s -> ${command}`);
+      appendLog('send', `设备${device} @${fmtSec(timeSec)}s -> ${command}`);
       return true;
     }
 
-    function tickPlaybackDispatch() {
+    function tickDispatch() {
       if (!state.playbackEnabled || videoEl.paused) return;
       const now = Number(videoEl.currentTime || 0);
       for (const evt of state.events) {
-        if (!evt.fired && evt.time <= now) {
-          const ok = sendCommand(evt.command, evt.device, evt.time);
-          evt.fired = ok;
-        }
+        if (!evt.fired && evt.time <= now) evt.fired = sendCommand(evt.command, evt.device, evt.time);
       }
       refreshStatus();
     }
 
-    function applyGameTemplate() {
-      const g = getSelectedGame();
-      state.scriptRows = g.scriptRows.map(normalizeRow);
-      renderScriptRows();
-      renderVideoSelect();
-      applyVideoUrl();
-      rebuildEvents();
-      appendLog('info', '已应用游戏模板', { game: g.name });
-    }
-
-    async function importScriptFile(file) {
+    async function importFile(file) {
       const name = file.name.toLowerCase();
-      const rows = [];
-
-      if (name.endsWith('.csv')) {
-        const text = await file.text();
-        const lines = text.split(/\r?\n/).filter((l) => l.trim());
-        for (const line of lines) {
-          const cols = line.split(',').map((v) => v.trim());
-          rows.push(normalizeRow({ t1: cols[0] || '', c1: cols[1] || '', t2: cols[2] || '', c2: cols[3] || '' }));
-        }
-      } else {
-        if (typeof XLSX === 'undefined') {
-          appendLog('error', '未加载 XLSX 解析库，请改用 CSV 或检查网络');
-          return;
-        }
-        const buf = await file.arrayBuffer();
-        const wb = XLSX.read(buf, { type: 'array' });
+      let rows = [];
+      if (name.endsWith('.csv')) rows = await parseCsvText(await file.text());
+      else {
+        if (typeof XLSX === 'undefined') return appendLog('error', 'XLSX 库加载失败');
+        const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
         const sheet = wb.Sheets[wb.SheetNames[0]];
         const arr = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
-        for (const r of arr) {
-          rows.push(normalizeRow({ t1: r[0] ?? '', c1: r[1] ?? '', t2: r[2] ?? '', c2: r[3] ?? '' }));
-        }
+        rows = arr.map((r) => normalizeRow({ t1: r[0] ?? '', c1: r[1] ?? '', t2: r[2] ?? '', c2: r[3] ?? '' }));
       }
-
       state.scriptRows = rows;
       renderScriptRows();
       rebuildEvents();
       appendLog('info', '脚本导入完成', { rows: rows.length, file: file.name });
     }
 
-    function downloadCurrentCsv() {
+    function downloadCsv() {
       const lines = state.scriptRows.map((r) => [r.t1 || '', r.c1 || '', r.t2 || '', r.c2 || ''].join(','));
-      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
+      a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' }));
       a.download = `${state.selectedGameId || 'script'}-${Date.now()}.csv`;
       a.click();
       URL.revokeObjectURL(a.href);
@@ -519,131 +377,64 @@
 
     function bindEvents() {
       YiDimension.onLog = (level, msg) => appendLog(level, msg);
-      YiDimension.onStatusChange = (ws, im) => {
-        state.wsConnected = !!ws;
-        state.imReady = !!im;
-        refreshStatus();
-      };
+      YiDimension.onStatusChange = (ws, im) => { state.wsConnected = !!ws; state.imReady = !!im; refreshStatus(); };
 
-      $('uid').addEventListener('input', () => {
-        state.uid = $('uid').value.trim();
-        saveBasicInputs();
-      });
-      $('token').addEventListener('input', () => {
-        state.token = $('token').value.trim();
-        refreshPayloadPreview();
-        saveBasicInputs();
-      });
-      $('manualCommand').addEventListener('input', () => {
-        state.manualCommand = $('manualCommand').value.trim();
-        refreshPayloadPreview();
-        saveBasicInputs();
-      });
+      $('uid').addEventListener('input', () => { state.uid = $('uid').value.trim(); saveBasicInputs(); });
+      $('token').addEventListener('input', () => { state.token = $('token').value.trim(); refreshPayloadPreview(); saveBasicInputs(); });
+      $('manualCommand').addEventListener('input', () => { state.manualCommand = $('manualCommand').value.trim(); refreshPayloadPreview(); saveBasicInputs(); });
 
-      $('connectBtn').addEventListener('click', () => {
-        appendLog('info', '开始连接网关...');
-        YiDimension.connect();
-      });
+      $('connectBtn').addEventListener('click', () => { appendLog('info', '开始连接网关...'); YiDimension.connect(); });
       $('loginBtn').addEventListener('click', () => {
-        if (!state.uid || !state.token) {
-          appendLog('warn', '请先输入 UID 和 Token');
-          return;
-        }
+        if (!state.uid || !state.token) return appendLog('warn', '请先输入 UID 和 Token');
         appendLog('info', `尝试登录 IM，UID=${state.uid}`);
         YiDimension.login(state.uid, state.token);
       });
       $('manualSendBtn').addEventListener('click', () => {
-        if (!state.manualCommand) {
-          appendLog('warn', '默认指令为空');
-          return;
-        }
+        if (!state.manualCommand) return appendLog('warn', '默认指令为空');
         sendCommand(state.manualCommand, 'manual', videoEl.currentTime || 0);
       });
 
-      $('gameSelect').addEventListener('change', () => {
-        state.selectedGameId = $('gameSelect').value;
-        state.selectedVideoIndex = 0;
-        renderGameMeta();
-        renderVideoSelect();
-        saveBasicInputs();
-      });
-      $('videoSelect').addEventListener('change', () => {
-        state.selectedVideoIndex = Number($('videoSelect').value || 0);
-        const g = getSelectedGame();
-        $('customVideoUrl').value = g.videos[state.selectedVideoIndex]?.url || '';
-        saveBasicInputs();
-      });
-      $('applyGameBtn').addEventListener('click', applyGameTemplate);
+      $('gameSelect').addEventListener('change', () => { state.selectedGameId = $('gameSelect').value; renderGameMeta(); saveBasicInputs(); });
+      $('applyGameBtn').addEventListener('click', applyGameConfig);
       $('applyVideoBtn').addEventListener('click', applyVideoUrl);
+      $('loadPlanBtn').addEventListener('click', () => loadPlanFromUrl($('customPlanUrl').value.trim()));
 
-      $('addRowBtn').addEventListener('click', () => {
-        state.scriptRows.push(normalizeRow({ t1: '', c1: '', t2: '', c2: '' }));
-        renderScriptRows();
-      });
+      $('addRowBtn').addEventListener('click', () => { state.scriptRows.push(normalizeRow({})); renderScriptRows(); });
       $('rebuildEventsBtn').addEventListener('click', rebuildEvents);
-      $('downloadCsvBtn').addEventListener('click', downloadCurrentCsv);
-      $('importFile').addEventListener('change', async (e) => {
-        const f = e.target.files?.[0];
-        if (!f) return;
-        await importScriptFile(f);
-        e.target.value = '';
-      });
+      $('downloadCsvBtn').addEventListener('click', downloadCsv);
+      $('importFile').addEventListener('change', async (e) => { const f = e.target.files?.[0]; if (f) await importFile(f); e.target.value = ''; });
 
       $('playScriptBtn').addEventListener('click', async () => {
         state.playbackEnabled = true;
         resetFiredByCurrentTime();
-        try {
-          await videoEl.play();
-          appendLog('info', '视频播放中，脚本触发已启用');
-        } catch (err) {
-          appendLog('error', '视频播放失败（可能被浏览器策略拦截）', { message: err?.message || String(err) });
-        }
+        try { await videoEl.play(); appendLog('info', '视频播放中，脚本触发已启用'); }
+        catch (err) { appendLog('error', '视频播放失败', { message: err?.message || String(err) }); }
       });
-      $('pauseScriptBtn').addEventListener('click', () => {
-        videoEl.pause();
-        appendLog('info', '视频已暂停');
-      });
-      $('resetScriptBtn').addEventListener('click', () => {
-        resetFiredByCurrentTime();
-        appendLog('info', '已按当前视频时间重置触发状态');
-      });
+      $('pauseScriptBtn').addEventListener('click', () => { videoEl.pause(); appendLog('info', '视频已暂停'); });
+      $('resetScriptBtn').addEventListener('click', () => { resetFiredByCurrentTime(); appendLog('info', '已按当前视频时间重置触发状态'); });
 
-      videoEl.addEventListener('timeupdate', () => {
-        refreshStatus();
-        tickPlaybackDispatch();
-      });
+      videoEl.addEventListener('timeupdate', () => { refreshStatus(); tickDispatch(); });
       videoEl.addEventListener('seeked', () => {
-        // 核心同步逻辑：拖动进度条后，用 currentTime 重新标记已触发事件
         resetFiredByCurrentTime();
-        appendLog('status', '检测到拖动/跳转，脚本触发状态已重同步', { currentTime: fmtSec(videoEl.currentTime) });
+        appendLog('status', '检测到拖动/跳转，已重同步触发状态', { currentTime: fmtSec(videoEl.currentTime) });
       });
 
-      $('clearLogBtn').addEventListener('click', () => {
-        logBox.textContent = '';
-        appendLog('info', '日志已清空');
-      });
+      $('clearLogBtn').addEventListener('click', () => { logBox.textContent = ''; appendLog('info', '日志已清空'); });
     }
 
-    function boot() {
+    async function boot() {
       $('uid').value = state.uid;
       $('token').value = state.token;
       $('manualCommand').value = state.manualCommand;
-
-      renderGameSelect();
-      bindEvents();
       refreshPayloadPreview();
-
-      const g = getSelectedGame();
-      if (g) {
-        state.scriptRows = g.scriptRows.map(normalizeRow);
-        renderScriptRows();
-        renderVideoSelect();
-        applyVideoUrl();
-        rebuildEvents();
-      }
-
+      bindEvents();
       refreshStatus();
-      appendLog('info', '页面初始化完成，自动连接网关');
+      appendLog('info', '页面初始化完成，开始加载 games.json 并连接网关');
+
+      await loadGamesList();
+      renderGameSelect();
+      if (getSelectedGame()) await applyGameConfig();
+
       YiDimension.connect();
     }
 
