@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>YiDimension 移动版视频联动控制台</title>
   <script src="yidimension-sdk.js"></script>
@@ -190,10 +191,12 @@
         <div class="pill"><span>IM</span><span id="imState">未就绪</span></div>
         <div class="pill"><span>视频时间</span><span id="videoTime">0.00s</span></div>
         <div class="pill"><span>游戏列表</span><span id="gameSource">加载中</span></div>
+
       </div>
     </section>
 
     <section class="card">
+
       <h2>1) IM 连接</h2>
       <div class="fields">
         <label>
@@ -211,10 +214,12 @@
         <button id="parseConnectBtn" type="button">解析粘贴内容</button>
         <button id="connectBtn" class="primary" type="button">连接网关</button>
         <button id="loginBtn" type="button">登录 IM</button>
+
       </div>
     </section>
 
     <section class="card">
+
       <h2>2) 选择游戏 + 视频播放</h2>
       <div class="fields">
         <label><span class="label">游戏</span><select id="gameSelect"></select></label>
@@ -283,22 +288,27 @@
     </section>
   </main>
 
+
   <script>
     const $ = (id) => document.getElementById(id);
     const logBox = $('logBox');
+
     const videoEl = $('video');
+
 
     const state = {
       wsConnected: false,
       imReady: false,
       uid: localStorage.getItem('yid_uid') || '',
       token: localStorage.getItem('yid_token') || '',
+
       manualCommand: localStorage.getItem('yid_manual_command') || 'hurt',
       selectedGameId: localStorage.getItem('yid_game_id') || '',
       games: [],
       scriptRows: [],
       events: [],
       playbackEnabled: false,
+
       networkType: 'unknown'
     };
 
@@ -307,6 +317,7 @@
 
     const fmtSec = (n) => Number.isFinite(Number(n)) ? Number(n).toFixed(2) : '0.00';
 
+
     function appendLog(level, msg, extra) {
       const t = new Date().toLocaleTimeString();
       const tail = extra ? ` ${JSON.stringify(extra)}` : '';
@@ -314,11 +325,14 @@
       logBox.scrollTop = logBox.scrollHeight;
     }
 
+
     function saveBasic() {
+
       localStorage.setItem('yid_uid', state.uid);
       localStorage.setItem('yid_token', state.token);
       localStorage.setItem('yid_manual_command', state.manualCommand);
       localStorage.setItem('yid_game_id', state.selectedGameId);
+
     }
 
     function getCurrentVideoUrl() {
@@ -372,11 +386,13 @@
         videoEl.preload = 'none';
         appendLog('warn', '检测到慢网，已降低预加载策略（preload=none）');
       }
+
     }
 
     function refreshStatus() {
       $('wsState').textContent = state.wsConnected ? '已连接' : '未连接';
       $('imState').textContent = state.imReady ? '已就绪' : '未就绪';
+
       $('videoTime').textContent = `${fmtSec(videoEl.currentTime)}s`;
       $('manualSendBtn').disabled = !(state.wsConnected && state.imReady);
     }
@@ -470,6 +486,7 @@
       });
     }
 
+
     async function tryLoadGamesFrom(base) {
       const resp = await fetch(`${base}/games.json`, { cache: 'no-store' });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -479,22 +496,28 @@
     }
 
     async function loadGamesList() {
+
       const candidates = EXPLICIT_ASSET_BASE ? [EXPLICIT_ASSET_BASE] : ['/assets', './assets', '../assets'];
+
       for (const base of candidates) {
         try {
           const arr = await tryLoadGamesFrom(base);
           ASSET_BASE = base;
           state.games = arr.filter(Boolean);
+
           $('gameSource').textContent = `已加载${state.games.length}`;
+
           appendLog('info', 'games.json 加载成功', { base, count: state.games.length });
           return;
         } catch (err) {
           appendLog('warn', '尝试读取 games.json 失败', { base, message: err?.message || String(err) });
         }
       }
+
       state.games = [];
       $('gameSource').textContent = '加载失败';
       appendLog('error', '所有资产路径都失败', { tried: candidates, tip: '可设置 window.YIDIMENSION_ASSET_BASE="../assets"' });
+
     }
 
     function getSelectedGame() {
@@ -506,6 +529,7 @@
       s.innerHTML = state.games.length
         ? state.games.map((g) => `<option value="${g.id}">${g.name || g.id}</option>`).join('')
         : '<option value="">(无可用游戏)</option>';
+
 
       const fallback = state.games[0]?.id || '';
       state.selectedGameId = state.selectedGameId && state.games.some((g) => g.id === state.selectedGameId)
@@ -536,6 +560,7 @@
         let rows = [];
         if (/\.csv($|\?)/i.test(url)) rows = await parseCsvText(await resp.text());
         else if (/\.(xlsx|xls)($|\?)/i.test(url)) {
+
           if (typeof XLSX === 'undefined') throw new Error('XLSX 库加载失败');
           const wb = XLSX.read(await resp.arrayBuffer(), { type: 'array' });
           const sheet = wb.Sheets[wb.SheetNames[0]];
@@ -546,6 +571,7 @@
           if (!Array.isArray(json)) throw new Error('JSON 脚本必须是数组');
           rows = json.map(normalizeRow);
         }
+
 
         state.scriptRows = rows;
         renderScriptRows();
@@ -558,7 +584,9 @@
 
     async function applyGameConfig() {
       const g = getSelectedGame();
+
       if (!g) return appendLog('warn', '没有可用游戏');
+
       $('customVideoUrl').value = g.videoUrl || '';
       $('customPlanUrl').value = g.planUrl || '';
       applyVideoUrl();
@@ -568,7 +596,9 @@
 
     function sendCommand(command, device, timeSec) {
       if (!state.wsConnected || !state.imReady) {
+
         appendLog('warn', 'IM 未就绪，跳过发送', { command, device, timeSec });
+
         return false;
       }
       YiDimension.send(command);
@@ -599,11 +629,14 @@
       state.scriptRows = rows;
       renderScriptRows();
       rebuildEvents();
+
       appendLog('info', '脚本导入完成', { file: file.name, rows: rows.length });
+
     }
 
     function downloadCsv() {
       const lines = state.scriptRows.map((r) => [r.t1 || '', r.c1 || '', r.t2 || '', r.c2 || ''].join(','));
+
       const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -611,10 +644,12 @@
       a.click();
       URL.revokeObjectURL(a.href);
       appendLog('info', 'CSV 导出成功');
+
     }
 
     function bindEvents() {
       YiDimension.onLog = (level, msg) => appendLog(level, msg);
+
       YiDimension.onStatusChange = (ws, im) => {
         state.wsConnected = !!ws;
         state.imReady = !!im;
@@ -685,32 +720,39 @@
         sendCommand(state.manualCommand, 'manual', videoEl.currentTime || 0);
       });
       $('resetScriptBtn').addEventListener('click', () => { resetFiredByCurrentTime(); appendLog('info', '已重置触发状态'); });
+
       $('loadPlanBtn').addEventListener('click', () => loadPlanFromUrl($('customPlanUrl').value.trim()));
 
       $('addRowBtn').addEventListener('click', () => { state.scriptRows.push(normalizeRow({})); renderScriptRows(); });
       $('rebuildEventsBtn').addEventListener('click', rebuildEvents);
       $('downloadCsvBtn').addEventListener('click', downloadCsv);
+
       $('importFile').addEventListener('change', async (e) => {
         const f = e.target.files?.[0];
         if (f) await importFile(f);
         e.target.value = '';
       });
 
+
       videoEl.addEventListener('timeupdate', () => { refreshStatus(); tickDispatch(); });
       videoEl.addEventListener('seeked', () => {
         resetFiredByCurrentTime();
+
         appendLog('status', '检测到拖动/跳转，触发状态已重同步', { currentTime: fmtSec(videoEl.currentTime) });
+
       });
 
       $('clearLogBtn').addEventListener('click', () => { logBox.textContent = ''; appendLog('info', '日志已清空'); });
     }
 
     async function boot() {
+
       bindEvents();
       refreshStatus();
       detectNetworkInfo();
       await registerServiceWorker();
       appendLog('info', '页面初始化完成，开始加载游戏列表并连接网关');
+
 
       await loadGamesList();
       renderGameSelect();
@@ -720,6 +762,8 @@
     }
 
     boot();
+
+
   </script>
 </body>
 </html>
