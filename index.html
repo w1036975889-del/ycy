@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <title>YiDimension 视频脚本联动控制台</title>
   <script src="yidimension-sdk.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -20,11 +21,13 @@
     .preview,#logBox{background:#0b0f22;border:1px solid var(--line);border-radius:10px;padding:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.45;white-space:pre-wrap;margin:0}#logBox{max-height:260px;overflow:auto}
     .danger{color:#ff9e9e}
     @media (max-width:980px){.video-layout,.grid-4,.grid-3,.status-row{grid-template-columns:1fr}}
+
   </style>
 </head>
 <body>
   <div class="wrap">
     <section class="card">
+
       <h1>YiDimension 视频脚本联动控制台</h1>
       <p class="small">游戏数据由 <code>assets/games.json</code> 驱动；脚本默认来自 <code>assets/plans</code>；视频默认来自 <code>assets/videos</code>（也支持外链）。</p>
       <div class="status-row">
@@ -34,19 +37,23 @@
         <div class="status-pill"><span>脚本事件</span><span id="eventCount">0</span></div>
         <div class="status-pill"><span>已触发</span><span id="firedCount">0</span></div>
         <div class="status-pill"><span>游戏列表</span><span id="gameSource">加载中</span></div>
+
       </div>
     </section>
 
     <section class="card">
+
       <h2>1) IM 连接与登录</h2>
       <div class="row grid-3">
         <label><span class="small">UID</span><input id="uid" placeholder="例如 30033" autocomplete="off" /></label>
         <label><span class="small">Token</span><input id="token" placeholder="请输入 token" autocomplete="off" /></label>
         <label><span class="small">默认指令（手动按钮）</span><input id="manualCommand" placeholder="例如 hurt / _stop_all" autocomplete="off" /></label>
+
       </div>
       <div class="btns">
         <button id="connectBtn" class="primary" type="button">连接网关</button>
         <button id="loginBtn" type="button">登录 IM</button>
+
         <button id="manualSendBtn" type="button">手动发送默认指令</button>
       </div>
     </section>
@@ -107,6 +114,7 @@
     <section class="card">
       <h3>6) 联调日志</h3>
       <div class="btns"><button id="clearLogBtn" type="button">清空日志</button></div>
+
       <pre id="logBox"></pre>
     </section>
   </div>
@@ -114,13 +122,16 @@
   <script>
     const $ = (id) => document.getElementById(id);
     const logBox = $('logBox');
+
     const videoEl = $('video');
+
 
     const state = {
       wsConnected: false,
       imReady: false,
       uid: localStorage.getItem('yid_uid') || '',
       token: localStorage.getItem('yid_token') || '',
+
       manualCommand: localStorage.getItem('yid_manual_command') || 'hurt',
       selectedGameId: localStorage.getItem('yid_game_id') || '',
       games: [],
@@ -143,11 +154,13 @@
       localStorage.setItem('yid_token', state.token);
       localStorage.setItem('yid_manual_command', state.manualCommand);
       localStorage.setItem('yid_game_id', state.selectedGameId);
+
     }
 
     function refreshStatus() {
       $('wsState').textContent = state.wsConnected ? '已连接' : '未连接';
       $('imState').textContent = state.imReady ? '已就绪' : '未就绪';
+
       $('videoTime').textContent = `${fmtSec(videoEl.currentTime)}s`;
       $('eventCount').textContent = String(state.events.length);
       $('firedCount').textContent = String(state.events.filter((e) => e.fired).length);
@@ -439,6 +452,7 @@
     }
 
     boot();
+
   </script>
 </body>
 </html>
