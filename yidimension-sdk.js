@@ -114,15 +114,14 @@
         this._emitLog("warn", "WS 未连接，无法 login（等重连成功后再点登录）");
         return;
       }
-      // ✅ 记录 token，供 game_cmd 发送时按官方格式带上
-      // 官方说明：token 为“用户token，不含uid”
+      // ✅ 记录 token，供发送时带上
       this._token = String(token || "").trim();
 
       this._emitLog("info", `开始登录（UID: ${uid}）`);
       this.socket.send(JSON.stringify({ type: "login", uid, token }));
     },
 
-    send(value) {
+    send(value, protocol = 'game_cmd') {
       if (!this.socket || this.socket.readyState !== 1) {
         this._emitLog("warn", "WS 未连接，无法 send");
         return;
@@ -132,29 +131,34 @@
         return;
       }
 
-      // ✅ 严格按官方“游戏开发 / game_cmd”结构
-      // payload.text 内应为 JSON：
-      // { "code": "game_cmd", "id": "<commandId>", "token": "<token(不含uid)>" }
-      const commandId = String(value ?? "").trim();
       const token = String(this._token || "").trim();
+      const raw = String(value ?? "").trim();
+      const mode = String(protocol || 'game_cmd').trim();
 
-      const payload = {
-        code: "game_cmd",
-        id: commandId,
-        token
-      };
-
-      if (!payload.id) {
-        this._emitLog("warn", "commandId 为空，已取消发送", payload);
-        return;
-      }
-      if (!payload.token) {
-        this._emitLog("warn", "token 为空：官方格式要求 token（不含uid），请先登录", payload);
+      if (!token) {
+        this._emitLog("warn", "token 为空：请先登录", { protocol: mode });
         return;
       }
 
-      this._emitLog("info", "发送指令", payload);
-      this.socket.send(JSON.stringify({ type: "sendCommand", payload }));
+      let payload;
+      if (mode === 'game_info') {
+        const data = Number(raw);
+        if (!Number.isFinite(data)) {
+          this._emitLog('warn', 'game_info 模式下 data 必须是数字（如 0/1/2）', { raw });
+          return;
+        }
+        payload = { code: 'game_info', data, token };
+      } else {
+        // 默认 game_cmd（开发游戏）
+        payload = { code: 'game_cmd', id: raw, token };
+        if (!payload.id) {
+          this._emitLog('warn', 'commandId 为空，已取消发送', payload);
+          return;
+        }
+      }
+
+      this._emitLog('info', `发送指令(${mode})`, payload);
+      this.socket.send(JSON.stringify({ type: 'sendCommand', payload }));
     },
 
     logout() {
