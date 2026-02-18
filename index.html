@@ -1,13 +1,13 @@
-<!-- ===== index.html (Full Production Version) ===== -->
+<!-- ===== index.html (IM 调试最简版) ===== -->
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8" />
   <title>YiDimension 控制台</title>
-  <script src="yidimension-sdk.js?v=20260218b"></script>
+  <script src="yidimension-sdk.js?v=20260218c"></script>
 </head>
 <body>
-  <h2>YiDimension 调试台</h2>
+  <h2>YiDimension IM 调试台（game_cmd 固定版）</h2>
 
   <div>
     UID: <input id="uid" />
@@ -16,28 +16,13 @@
   </div>
 
   <div style="margin-top: 10px;">
-    协议模式:
-    <select id="protocol" onchange="onProtocolChange()">
-      <option value="game_cmd">开发游戏（game_cmd）</option>
-      <option value="game_info">自定义游戏（game_info，旧）</option>
-    </select>
-  </div>
-
-  <div style="margin-top: 10px;">
-    指令:
-    <select id="cmdSelect" onchange="onCommandChange()">
-      <option value="hurt">hurt（示例）</option>
-      <option value="hurt_1">hurt_1（你当前测试值）</option>
-      <option value="_stop_all">_stop_all（全局停止）</option>
-      <option value="__custom__">自定义输入…</option>
-    </select>
-    <input id="customCmd" type="text" placeholder="game_cmd: 输入ID，如 player_hurt；game_info: 输入数字 0/1/2" style="display:none;" />
+    指令ID:
+    <input id="commandId" type="text" placeholder="请输入开发游戏中的指令ID，如 hurt / hurt_1 / _stop_all" />
     <button onclick="send()">发送信号</button>
   </div>
 
   <div style="margin-top: 10px;">
-    当前协议: <code id="previewProtocol">game_cmd</code>
-    ｜ 当前将发送: <code id="previewPayload">{"code":"game_cmd","id":"hurt","token":"***"}</code>
+    当前将发送: <code id="previewPayload">{"code":"game_cmd","id":"","token":"(空)"}</code>
   </div>
 
   <div>
@@ -61,6 +46,14 @@
       document.getElementById('imStatus').textContent = im ? '已登录' : '未登录';
     };
 
+    function refreshPreview() {
+      const id = (document.getElementById('commandId').value || '').trim();
+      const token = (document.getElementById('token').value || '').trim();
+      const tokenMask = token ? '***' : '(空)';
+      const preview = { code: 'game_cmd', id, token: tokenMask };
+      document.getElementById('previewPayload').textContent = JSON.stringify(preview);
+    }
+
     function login() {
       const uid = document.getElementById('uid').value;
       const token = document.getElementById('token').value;
@@ -68,61 +61,19 @@
       refreshPreview();
     }
 
-    function getCurrentValue() {
-      const selectVal = document.getElementById('cmdSelect').value;
-      const customVal = document.getElementById('customCmd').value.trim();
-      return selectVal === '__custom__' ? customVal : selectVal;
-    }
-
-    function onProtocolChange() {
-      const protocol = document.getElementById('protocol').value;
-      document.getElementById('previewProtocol').textContent = protocol;
-      refreshPreview();
-    }
-
-    function onCommandChange() {
-      const select = document.getElementById('cmdSelect');
-      const customInput = document.getElementById('customCmd');
-
-      if (select.value === '__custom__') {
-        customInput.style.display = 'inline-block';
-      } else {
-        customInput.style.display = 'none';
-      }
-      refreshPreview();
-    }
-
-    function refreshPreview() {
-      const protocol = document.getElementById('protocol').value;
-      const value = getCurrentValue();
-      const token = (document.getElementById('token').value || '').trim();
-      const tokenMask = token ? '***' : '(空)';
-
-      let preview;
-      if (protocol === 'game_info') {
-        preview = { code: 'game_info', data: Number(value), token: tokenMask };
-      } else {
-        preview = { code: 'game_cmd', id: value, token: tokenMask };
-      }
-      document.getElementById('previewPayload').textContent = JSON.stringify(preview);
-    }
-
     function send() {
-      const protocol = document.getElementById('protocol').value;
-      const value = getCurrentValue();
-      if (!value) {
-        YiDimension.onLog && YiDimension.onLog('warn', '请选择或输入有效指令');
+      const commandId = (document.getElementById('commandId').value || '').trim();
+      if (!commandId) {
+        YiDimension.onLog && YiDimension.onLog('warn', '请输入有效的指令ID');
         return;
       }
-      YiDimension.send(value, protocol);
+      YiDimension.send(commandId);
       refreshPreview();
     }
 
-    document.getElementById('customCmd').addEventListener('input', refreshPreview);
+    document.getElementById('commandId').addEventListener('input', refreshPreview);
     document.getElementById('token').addEventListener('input', refreshPreview);
 
-    onProtocolChange();
-    onCommandChange();
     refreshPreview();
     YiDimension.connect();
   </script>
