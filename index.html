@@ -7,6 +7,8 @@
   <title>YiDimension 视频脚本联动控制台</title>
   <script src="yidimension-sdk.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>window.YIDIMENSION_ASSET_BASE = window.YIDIMENSION_ASSET_BASE || '';</script>
+
   <style>
     :root { color-scheme: dark; --bg:#0f1220; --panel:#171b2f; --line:#2a3155; --text:#e8ecff; --muted:#9fa9d8; --accent:#5b7cff; --chip:#2b356f; }
     *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"PingFang SC",sans-serif;background:radial-gradient(circle at top,#1a2040 0%,var(--bg) 50%);color:var(--text);min-height:100vh;padding:18px}
@@ -22,6 +24,7 @@
     .danger{color:#ff9e9e}
     @media (max-width:980px){.video-layout,.grid-4,.grid-3,.status-row{grid-template-columns:1fr}}
 
+
   </style>
 </head>
 <body>
@@ -29,7 +32,8 @@
     <section class="card">
 
       <h1>YiDimension 视频脚本联动控制台</h1>
-      <p class="small">游戏数据由 <code>assets/games.json</code> 驱动；脚本默认来自 <code>assets/plans</code>；视频默认来自 <code>assets/videos</code>（也支持外链）。</p>
+      <p class="small">游戏数据由 <code>/assets/games.json</code> 驱动（服务器目录 <code>/www/wwwroot/yidimension/assets</code>）；脚本默认来自 <code>/assets/plans</code>；视频默认来自 <code>/assets/videos</code>（也支持外链）。</p>
+
       <div class="status-row">
         <div class="status-pill"><span>WebSocket</span><span id="wsState">未连接</span></div>
         <div class="status-pill"><span>IM 状态</span><span id="imState">未就绪</span></div>
@@ -172,20 +176,43 @@
       $('payloadPreview').textContent = JSON.stringify(preview);
     }
 
+
+    const EXPLICIT_ASSET_BASE = String(window.YIDIMENSION_ASSET_BASE || '').replace(/\/$/, '');
+    let ASSET_BASE = EXPLICIT_ASSET_BASE || '/assets';
+
+    async function tryLoadGamesFrom(base) {
+      const resp = await fetch(`${base}/games.json`, { cache: 'no-store' });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const arr = await resp.json();
+      if (!Array.isArray(arr)) throw new Error('games.json 必须是数组');
+      return arr;
+    }
+
     async function loadGamesList() {
-      try {
-        const resp = await fetch('/assets/games.json', { cache: 'no-store' });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const arr = await resp.json();
-        if (!Array.isArray(arr)) throw new Error('games.json 必须是数组');
-        state.games = arr.filter(Boolean);
-        $('gameSource').textContent = `已加载 ${state.games.length} 个`;
-        appendLog('info', 'games.json 加载成功', { count: state.games.length });
-      } catch (err) {
-        $('gameSource').textContent = '加载失败';
-        appendLog('error', '加载 assets/games.json 失败', { message: err?.message || String(err) });
-        state.games = [];
+      const candidates = EXPLICIT_ASSET_BASE
+        ? [EXPLICIT_ASSET_BASE]
+        : ['/assets', './assets', '../assets'];
+
+      for (const base of candidates) {
+        try {
+          const arr = await tryLoadGamesFrom(base);
+          ASSET_BASE = base;
+          state.games = arr.filter(Boolean);
+          $('gameSource').textContent = `已加载 ${state.games.length} 个`;
+          appendLog('info', 'games.json 加载成功', { base, count: state.games.length });
+          return;
+        } catch (err) {
+          appendLog('warn', '尝试读取 games.json 失败', { base, message: err?.message || String(err) });
+        }
       }
+
+      $('gameSource').textContent = '加载失败';
+      appendLog('error', '所有资产路径都读取失败，请检查 Nginx 站点根目录/反向代理路径', {
+        tried: candidates,
+        tip: '若页面在 /test/index.html 且 assets 在上级目录，请设置 window.YIDIMENSION_ASSET_BASE="../assets"'
+      });
+      state.games = [];
+
     }
 
     function getSelectedGame() {
@@ -442,7 +469,9 @@
       refreshPayloadPreview();
       bindEvents();
       refreshStatus();
-      appendLog('info', '页面初始化完成，开始加载 games.json 并连接网关');
+
+      appendLog('info', `页面初始化完成，开始探测 assets 目录并连接网关`);
+
 
       await loadGamesList();
       renderGameSelect();
