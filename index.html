@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YiDimension 游戏接入里程碑</title>
+  <script src="yidimension-sdk.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f1220;
+      --panel: #171b2f;
+      --line: #2a3155;
+      --text: #e8ecff;
+      --muted: #9fa9d8;
+      --ok: #2ecc71;
+      --warn: #f1c40f;
+      --bad: #e74c3c;
+      --accent: #5b7cff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "PingFang SC", sans-serif;
+      background: radial-gradient(circle at top, #1a2040 0%, var(--bg) 50%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+    .card {
+      background: linear-gradient(180deg, #1b2140, var(--panel));
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    h1, h2, h3 { margin: 0 0 12px; }
+    .small { color: var(--muted); font-size: 13px; }
+    .status-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .status-pill {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.02);
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+    .dot.ok { background: var(--ok); }
+    .dot.warn { background: var(--warn); }
+    .dot.bad { background: var(--bad); }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #0f1430;
+      color: var(--text);
+    }
+    .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    button {
+      border: 1px solid #33408a;
+      background: #243069;
+      color: #f0f4ff;
+      border-radius: 10px;
+      padding: 9px 12px;
+      cursor: pointer;
+    }
+    button.primary { background: var(--accent); border-color: #6f8dff; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .game-area {
+      border: 1px dashed #49518d;
+      border-radius: 14px;
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+    .preview {
+      background: #0d1125;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      word-break: break-all;
+      color: #d6deff;
+    }
+    #logBox {
+      margin: 0;
+      max-height: 260px;
+      overflow: auto;
+      background: #0b0f22;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    @media (max-width: 760px) {
+      .form-grid, .status-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card">
+      <h1>YiDimension 游戏接入（里程碑页）</h1>
+      <p class="small">目标：先把 IM 通信稳定接入游戏页面，再继续扩展玩法逻辑。</p>
+      <div class="status-row">
+        <div class="status-pill"><span>WebSocket</span><span id="wsState">未连接</span></div>
+        <div class="status-pill"><span>IM 登录</span><span id="imState">未就绪</span></div>
+        <div class="status-pill"><span>当前命令</span><span id="cmdState">(空)</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>1) 初始化连接 + 登录</h2>
+      <div class="form-grid">
+        <label>
+          <span class="small">UID</span>
+          <input id="uid" placeholder="例如 30033" autocomplete="off" />
+        </label>
+        <label>
+          <span class="small">Token</span>
+          <input id="token" placeholder="请输入 token" autocomplete="off" />
+        </label>
+        <label>
+          <span class="small">游戏指令 ID</span>
+          <input id="commandId" placeholder="例如 hurt / _stop_all" autocomplete="off" />
+        </label>
+      </div>
+      <div class="btns">
+        <button id="connectBtn" class="primary" type="button">连接网关</button>
+        <button id="loginBtn" type="button">登录 IM</button>
+        <button id="clearLogBtn" type="button">清空日志</button>
+      </div>
+    </section>
+
+    <section class="card game-area">
+      <h2>2) 游戏区（示例）</h2>
+      <p class="small">这里先放一个“触发命令”按钮，后续你把它绑定到真实游戏事件（碰撞、得分、关卡结束等）。</p>
+      <div class="btns">
+        <button id="sendBtn" class="primary" type="button" disabled>触发命令（发送 game_cmd）</button>
+      </div>
+      <div>
+        <div class="small">发送预览：</div>
+        <div class="preview" id="payloadPreview">{"code":"game_cmd","id":"","token":"(空)"}</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>3) 联调日志</h3>
+      <pre id="logBox"></pre>
+    </section>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const logBox = $('logBox');
+
+    const state = {
+      wsConnected: false,
+      imReady: false,
+      uid: localStorage.getItem('yid_uid') || '',
+      token: localStorage.getItem('yid_token') || '',
+      commandId: localStorage.getItem('yid_command_id') || ''
+    };
+
+    function appendLog(level, msg) {
+      const time = new Date().toLocaleTimeString();
+      logBox.textContent += `[${time}] [${level}] ${msg}\n`;
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function refreshPreview() {
+      const tokenMasked = state.token ? '***' : '(空)';
+      const preview = { code: 'game_cmd', id: state.commandId || '', token: tokenMasked };
+      $('payloadPreview').textContent = JSON.stringify(preview);
+      $('cmdState').textContent = state.commandId || '(空)';
+    }
+
+    function refreshStatus() {
+      $('wsState').textContent = state.wsConnected ? '已连接' : '未连接';
+      $('imState').textContent = state.imReady ? '已就绪' : '未就绪';
+      $('sendBtn').disabled = !(state.wsConnected && state.imReady);
+    }
+
+    function initFormFromState() {
+      $('uid').value = state.uid;
+      $('token').value = state.token;
+      $('commandId').value = state.commandId;
+      refreshPreview();
+      refreshStatus();
+    }
+
+    function syncStateFromForm() {
+      state.uid = $('uid').value.trim();
+      state.token = $('token').value.trim();
+      state.commandId = $('commandId').value.trim();
+      localStorage.setItem('yid_uid', state.uid);
+      localStorage.setItem('yid_token', state.token);
+      localStorage.setItem('yid_command_id', state.commandId);
+      refreshPreview();
+    }
+
+    YiDimension.onLog = (level, msg) => appendLog(level, msg);
+    YiDimension.onStatusChange = (ws, im) => {
+      state.wsConnected = !!ws;
+      state.imReady = !!im;
+      refreshStatus();
+      appendLog('status', `状态更新 ws=${state.wsConnected} im=${state.imReady}`);
+    };
+
+    $('connectBtn').addEventListener('click', () => {
+      appendLog('info', '开始连接网关...');
+      YiDimension.connect();
+    });
+
+    $('loginBtn').addEventListener('click', () => {
+      syncStateFromForm();
+      if (!state.uid || !state.token) {
+        appendLog('warn', '请先输入 UID 和 Token');
+        return;
+      }
+      appendLog('info', `尝试登录 IM，UID=${state.uid}`);
+      YiDimension.login(state.uid, state.token);
+    });
+
+    $('sendBtn').addEventListener('click', () => {
+      syncStateFromForm();
+      if (!state.commandId) {
+        appendLog('warn', '请先输入 commandId');
+        return;
+      }
+      appendLog('info', `触发游戏命令: ${state.commandId}`);
+      YiDimension.send(state.commandId);
+    });
+
+    $('clearLogBtn').addEventListener('click', () => {
+      logBox.textContent = '';
+      appendLog('info', '日志已清空');
+    });
+
+    $('uid').addEventListener('input', syncStateFromForm);
+    $('token').addEventListener('input', syncStateFromForm);
+    $('commandId').addEventListener('input', syncStateFromForm);
+
+    initFormFromState();
+    appendLog('info', '页面初始化完成，自动尝试连接网关');
+    YiDimension.connect();
+  </script>
+</body>
+</html>
