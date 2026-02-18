@@ -76,6 +76,23 @@
           return;
         }
 
+        {
+          const evtType = data?.type || data?.eventType || "unknown";
+          if (evtType === "KICKED_OUT") {
+            this.isIMReady = false;
+            this._emitStatus();
+            const reason = data?.event?.data?.type || "unknown";
+            this._emitLog("error", `IM 被挤下线（${reason}）：同一账号在官方 App/其它端登录会导致当前网页端无法发指令`);
+            return;
+          }
+          if (evtType === "SDK_NOT_READY") {
+            this.isIMReady = false;
+            this._emitStatus();
+            this._emitLog("warn", "IM SDK_NOT_READY，当前不可发送指令");
+            return;
+          }
+        }
+
         this._emitLog("info", "收到消息", data);
       };
 
@@ -122,7 +139,7 @@
       this.socket.send(JSON.stringify({ type: "login", uid, token }));
     },
 
-    send(value) {
+    send(value, targetId) {
       if (!this.socket || this.socket.readyState !== 1) {
         this._emitLog("warn", "WS 未连接，无法 send");
         return;
@@ -153,8 +170,34 @@
         return;
       }
 
-      this._emitLog("info", "发送指令", payload);
-      this.socket.send(JSON.stringify({ type: "sendCommand", payload }));
+      const msg = { type: "sendCommand", payload };
+      if (targetId) msg.targetId = String(targetId).trim();
+
+      this._emitLog("info", "发送指令", { ...payload, targetId: msg.targetId || null });
+      this.socket.send(JSON.stringify(msg));
+    },
+
+
+    sendRaw(rawPayload, targetId) {
+      if (!this.socket || this.socket.readyState !== 1) {
+        this._emitLog("warn", "WS 未连接，无法 sendRaw");
+        return;
+      }
+      if (!this.isIMReady) {
+        this._emitLog("warn", "IM 未就绪，无法 sendRaw");
+        return;
+      }
+
+      if (!rawPayload || typeof rawPayload !== "object") {
+        this._emitLog("warn", "rawPayload 非法，必须是对象", { rawPayload });
+        return;
+      }
+
+      const msg = { type: "sendCommand", payload: rawPayload };
+      if (targetId) msg.targetId = String(targetId).trim();
+
+      this._emitLog("info", "发送原始指令", { payload: rawPayload, targetId: msg.targetId || null });
+      this.socket.send(JSON.stringify(msg));
     },
 
     logout() {

@@ -50,6 +50,28 @@ function normalizeUid(input) {
   return s.startsWith('game_') ? s.slice(5) : s;
 }
 
+function withGamePrefix(id) {
+  const s = String(id || '').trim();
+  if (!s) return null;
+  return s.startsWith('game_') ? s : `game_${s}`;
+}
+
+function buildTargetCandidates(values = []) {
+  const out = [];
+  const seen = new Set();
+  for (const v of values) {
+    const raw = String(v || '').trim();
+    if (!raw) continue;
+    const variants = [raw, normalizeUid(raw), withGamePrefix(raw)].filter(Boolean);
+    for (const id of variants) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      out.push(id);
+    }
+  }
+  return out;
+}
+
 function stripGamePrefix(id) {
   const s = String(id || '').trim();
   return s.startsWith('game_') ? s.slice(5) : s;
@@ -152,7 +174,8 @@ class ChatClient {
     this.state.userSig = userSig;
     // ✅ IM 登录 userID 强制使用纯 UID（不带 game_）
     // game_sign 返回的 userId 可能带 game_ 前缀，但你已验证带 game_ 时 App 不响应
-    this.state.userId = normalizeUid(uid);
+    // 优先使用 game_sign 返回 userId（可能带 game_ 前缀），避免收发账号不一致
+    this.state.userId = String(userId || '').trim() || normalizeUid(uid);
 
     // provide WebSocket implementation for Node
     // TencentCloudChat on Node expects global WebSocket
@@ -271,7 +294,7 @@ class ChatClient {
 
     const msg = this.chat.createTextMessage({
       // 官方示例里 to 常为纯数字（不带 game_ 前缀）
-      to: normalizeUid(targetId),
+      to: String(targetId).trim(),
       conversationType: TencentCloudChat.TYPES.CONV_C2C,
       payload: {
         // IMPORTANT: payload.text must be JSON string (developer doc)
@@ -406,7 +429,15 @@ function wsLog(ws, msg, level='info', extra=null) {
 }
 
 function wsStatus(ws, session) {
-  wsSend(ws, { type: 'status', isOnline: true, isReady: !!session?.isReady, sessionId: session?.id, uid: session?.uid || null, time: nowIso() });
+  wsSend(ws, {
+    type: 'status',
+    isOnline: true,
+    isReady: !!session?.isReady,
+    sessionId: session?.id,
+    uid: session?.uid || null,
+    kickedOutReason: session?.kickedOutReason || null,
+    time: nowIso()
+  });
 }
 
 function broadcast(obj) {
@@ -439,6 +470,7 @@ async function handleWsMessage(ws, session, msg) {
 
       session.uid = uid;
       session.token = String(token);
+      session.kickedOutReason = null;
 
       wsLog(ws, `开始登录 IM: uid=${uid}`, 'info');
       try {
@@ -464,6 +496,7 @@ async function handleWsMessage(ws, session, msg) {
         session.isReady = false;
         session.uid = null;
         session.token = null;
+        session.kickedOutReason = null;
         wsSend(ws, { type: 'logoutResult', success: true });
         wsStatus(ws, session);
       }
@@ -472,8 +505,9 @@ async function handleWsMessage(ws, session, msg) {
 
     case 'sendCommand': {
       if (!session.isReady) {
-        wsLog(ws, 'IM 未就绪，请先 login', 'error');
-        wsSend(ws, { type: 'sendResult', success: false, message: 'IM 未就绪' });
+        const detail = session.kickedOutReason ? `（被挤下线: ${session.kickedOutReason}）` : '';
+        wsLog(ws, `IM 未就绪，请先 login${detail}`, 'error');
+        wsSend(ws, { type: 'sendResult', success: false, message: `IM 未就绪${detail}` });
         return;
       }
 
@@ -505,22 +539,31 @@ async function handleWsMessage(ws, session, msg) {
         session.im?.state?.userId,
         session.uid,
       ];
-      const targets = Array.from(
-        new Set(candidatesRaw.filter(Boolean).map((v) => normalizeUid(v)).filter(Boolean))
-      );
+      const targets = buildTargetCandidates(candidatesRaw);
       const actualTo = targets[0] || "";
+      if (!msg.targetId) {
+        wsLog(ws, '未显式提供 targetId：将按默认候选顺序发送。若你使用官方 App 控制设备，建议前端传 targetId=手机App登录UID。', 'warn', {
+          candidates: targets
+        });
+      }
 
       // traceId 仅用于服务端日志追踪，不注入到 payload.text，避免对方严格校验失败
       const traceId = msg.traceId || genId('trace');
 
-      // ✅ 严格按官方 game_cmd 结构（不额外塞 traceId）：{ code, id, token }
+      // 兼容两种常见格式：
+      // A) { code: "game_cmd", id, token }
+      // B) { cmd: "game_cmd", data: {...} }
       let finalPayload;
       if (typeof payload === 'object' && payload !== null) {
-        finalPayload = {
-          code: String(payload.code || '').trim(),
-          id: String(payload.id ?? '').trim(),
-          token: String(payload.token || session.token || '').trim(),
-        };
+        if (payload.cmd === 'game_cmd' && payload.data && typeof payload.data === 'object') {
+          finalPayload = payload;
+        } else {
+          finalPayload = {
+            code: String(payload.code || '').trim(),
+            id: String(payload.id ?? '').trim(),
+            token: String(payload.token || session.token || '').trim(),
+          };
+        }
       } else {
         // 兼容：如果 payload 不是对象，则把它当作 commandId
         finalPayload = {
@@ -581,6 +624,7 @@ wss.on('connection', (ws, req) => {
     uid: null,
     token: null,
     isReady: false,
+    kickedOutReason: null,
     im: new ChatClient({
       loggerPrefix: 'ws',
       onEvent: (evt, data) => {
@@ -588,12 +632,19 @@ wss.on('connection', (ws, req) => {
         if (evt === 'log') wsLog(ws, data.msg, data.level || 'info');
         if (evt === 'status') {
           session.isReady = !!data.isReady;
+          if (session.isReady) session.kickedOutReason = null;
           wsStatus(ws, session);
         }
         if (evt === 'imEvent') {
           wsSend(ws, { type: 'imEvent', ...data, time: nowIso() });
           // if kicked out, mark not ready
-          if (data?.type === 'KICKED_OUT' || data?.type === 'SDK_NOT_READY') {
+          if (data?.type === 'KICKED_OUT') {
+            session.isReady = false;
+            session.kickedOutReason = data?.event?.data?.type || 'unknown';
+            wsLog(ws, `IM 被挤下线: ${session.kickedOutReason}。同一 userID 在官方 App/其它端登录会触发此情况。`, 'error');
+            wsStatus(ws, session);
+          }
+          if (data?.type === 'SDK_NOT_READY') {
             session.isReady = false;
             wsStatus(ws, session);
           }

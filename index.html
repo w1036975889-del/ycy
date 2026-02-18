@@ -17,6 +17,7 @@
 
   <div>
     指令ID: <input id="val" type="text" placeholder="可输入字母/数字/符号，如 player_hurt 或 1" />
+    设备UID: <input id="targetId" type="text" placeholder="建议填写手机App当前登录的UID，如 30033" />
     <button onclick="send()">发送信号</button>
   </div>
 
@@ -43,14 +44,19 @@
     };
 
     function login() {
-      const uid = document.getElementById('uid').value;
-      const token = document.getElementById('token').value;
+      const uid = document.getElementById('uid').value.trim();
+      const token = document.getElementById('token').value.trim();
       YiDimension.login(uid, token);
+
+      const box = document.getElementById('logBox');
+      box.textContent += `[hint] 建议“登录UID”使用桥接账号；“设备UID”填写手机App登录账号。若两者相同可能触发 multipleAccount 被挤下线
+`;
     }
 
     function send() {
       const val = document.getElementById('val').value;
-      YiDimension.send(val);
+      const targetId = document.getElementById('targetId').value.trim();
+      YiDimension.send(val, targetId || undefined);
     }
 
     YiDimension.connect();
