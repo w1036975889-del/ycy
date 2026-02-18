@@ -1,0 +1,16 @@
+[
+  {
+    "id": "demo_hosted_video",
+    "name": "托管视频示例（脚本走本地）",
+    "videoUrl": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+    "planUrl": "/assets/plans/demo-hosted.csv",
+    "tags": ["托管视频", "双设备"]
+  },
+  {
+    "id": "demo_rhythm_local",
+    "name": "节奏挑战（本地资源示例）",
+    "videoUrl": "/assets/videos/demo-rhythm.mp4",
+    "planUrl": "/assets/plans/demo-rhythm.csv",
+    "tags": ["本地视频", "双设备", "A-D 脚本"]
+  }
+]
