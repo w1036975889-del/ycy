@@ -20,6 +20,7 @@ import { createServer } from 'http';
 import { promises as fs } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { applyGame2Routes } from './game2_cunzhi/game2-api.js';
 
 const PORT = Number(process.env.PORT || 3001);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -350,6 +351,8 @@ let adminConfig = { uid: null, token: null, appId: null, userId: null, isReady: 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
+app.use('/game2', express.static(path.resolve(process.cwd(), 'game2_cunzhi', 'public', 'game2')));
+await applyGame2Routes(app);
 
 app.get('/health', (_req, res) => {
   res.json({
