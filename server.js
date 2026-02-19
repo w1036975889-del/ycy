@@ -17,9 +17,10 @@ import express from 'express';
 import cors from 'cors';
 import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
-import { promises as fs } from 'fs';
+import { promises as fs, existsSync } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { applyGame2Routes } from './game2_cunzhi/game2-api.js';
 
 const PORT = Number(process.env.PORT || 3001);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -350,6 +351,22 @@ let adminConfig = { uid: null, token: null, appId: null, userId: null, isReady: 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
+
+const game2StaticCandidates = [
+  path.resolve(process.cwd(), 'game2_cunzhi'),
+  path.resolve(process.cwd(), 'game2_cunzhi', 'public', 'game2'),
+];
+const game2StaticDir = game2StaticCandidates.find((dir) => existsSync(path.join(dir, 'index.html'))) || game2StaticCandidates[0];
+
+app.use('/game2', express.static(game2StaticDir));
+app.get('/game2', (_req, res) => {
+  res.sendFile(path.join(game2StaticDir, 'index.html'));
+});
+app.get('/yidimension-sdk.js', (_req, res) => {
+  res.sendFile(path.resolve(process.cwd(), 'yidimension-sdk.js'));
+});
+
+await applyGame2Routes(app);
 
 app.get('/health', (_req, res) => {
   res.json({
